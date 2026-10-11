@@ -193,7 +193,8 @@ void breezyBluff(MapDef& def)
     // A tall bluff climbed in tiers.
     s.ground(30, 64, g - 5, kGround).column(29, g - 5, g - 1, kLadder).rampDown(65, g, 5, kRampDown, kGround);
     s.ground(38, 56, g - 10, kGround).column(37, g - 10, g - 6, kLadder);
-    s.ground(43, 52, g - 14, kGround).column(53, g - 14, g - 11, kRope);
+    s.ground(43, 52, g - 14, kGround).column(53, g - 14, g - 11, kRope).column(42, g - 14, g - 11, kRope);
+    s.column(57, g - 10, g - 6, kLadder); // back up from the east side
     s.row(8, 16, g - 3, kFoothold).row(14, 22, g - 6, kFoothold).column(20, g - 6, g - 1, kRope).row(18, 26, g - 9, kFoothold)
         .column(24, g - 9, g - 7, kRope);
     s.row(72, 80, g - 3, kFoothold).row(78, 88, g - 6, kFoothold).column(86, g - 6, g - 1, kLadder).row(84, 94, g - 9, kFoothold)
@@ -206,7 +207,7 @@ void breezyBluff(MapDef& def)
     def.spawns = {
         {S::Swirlsnail, runOn(1, 28, g), 3},       {S::Sproutcap, runOn(8, 16, g - 3), 1},  {S::Dewdrop, runOn(14, 22, g - 6), 1},
         {S::Swirlsnail, runOn(18, 26, g - 9), 1},  {S::Swirlsnail, runOn(30, 37, g - 5), 1}, {S::Dewdrop, runOn(57, 64, g - 5), 1},
-        {S::Swirlsnail, runOn(38, 56, g - 10), 2}, {S::Sproutcap, runOn(43, 52, g - 14), 1}, {S::Swirlsnail, runOn(70, 99, g), 3},
+        {S::Swirlsnail, runOn(38, 42, g - 10), 1}, {S::Swirlsnail, runOn(53, 56, g - 10), 1}, {S::Sproutcap, runOn(43, 52, g - 14), 1}, {S::Swirlsnail, runOn(70, 99, g), 3},
         {S::Dewdrop, runOn(78, 88, g - 6), 1},     {S::Swirlsnail, runOn(84, 94, g - 9), 1},
     };
     def.populationCap = 15;

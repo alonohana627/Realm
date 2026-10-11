@@ -189,6 +189,8 @@ void Session::enterMap(const MapId id, const Vec2 feet, const int facing)
     m_shots.clear();
     m_hazards.clear();
     m_delayed.clear();
+    // A moment of safety on arrival, as the portal fades in.
+    m_hero.vulnerable.makeInvincible(90);
     m_boss.reset();
     const MapDef& def = map();
     m_spawner = gamelib::core::Spawner{def.populationCap};
@@ -1272,7 +1274,16 @@ void Session::dropLoot(const Monster& m)
     std::vector<Loot> loot;
     const std::int64_t coins = static_cast<std::int64_t>(m.level * 3 + m_rng.range(0, m.level * 2 + 3)) * (m.elite ? 4 : 1);
     loot.push_back({.coins = coins});
-    if (m.elite || m_rng.chance(0.5f)) {
+    // A drop an active quest asks for falls more often.
+    bool wanted = false;
+    for (const auto& q : questDefs()) {
+        if (m_quests.stateOf(q.id) == QuestState::Active) {
+            for (const auto& o : q.objectives) {
+                wanted = wanted || (o.kind == ObjectiveKind::Collect && o.subject == dropItem(m.species));
+            }
+        }
+    }
+    if (m.elite || m_rng.chance(wanted ? 0.7f : 0.45f)) {
         loot.push_back({.stack = {.item = dropItem(m.species), .count = m.elite ? 3 : 1}});
     }
     if (m_rng.chance(m.elite ? 0.35f : 0.07f)) {

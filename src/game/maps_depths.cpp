@@ -55,7 +55,7 @@ void tunnels(MapDef& def)
     s.ground(30, 44, g - 3, kGround).rampUp(27, g, 3, kRampUp, kGround).rampDown(45, g, 3, kRampDown, kGround);
     s.row(32, 42, g - 8, kFoothold).column(38, g - 8, g - 4, kRope).row(36, 46, g - 12, kFoothold).column(44, g - 12, g - 9, kRope);
     s.row(54, 62, g - 3, kFoothold).row(58, 68, g - 6, kFoothold).column(66, g - 6, g - 1, kLadder).row(62, 72, g - 10, kFoothold)
-        .column(70, g - 10, g - 7, kRope);
+        .column(67, g - 10, g - 7, kRope);
     s.ground(80, 96, g - 4, kGround).column(79, g - 4, g - 1, kLadder).rampDown(97, g, 4, kRampDown, kGround);
     s.row(84, 94, g - 9, kFoothold).column(90, g - 9, g - 5, kRope);
     s.row(104, 114, g - 4, kFoothold).column(112, g - 4, g - 1, kRope);
@@ -129,11 +129,11 @@ void deepHollow(MapDef& def)
     s.ground(10, 28, g - 4, kGround).column(9, g - 4, g - 1, kLadder).rampDown(29, g, 4, kRampDown, kGround);
     s.row(12, 24, g - 9, kFoothold).column(18, g - 9, g - 5, kRope).row(16, 26, g - 13, kFoothold).column(24, g - 13, g - 10, kRope);
     s.row(40, 48, g - 3, kFoothold).row(44, 54, g - 7, kFoothold).column(52, g - 7, g - 1, kRope).row(50, 60, g - 11, kFoothold)
-        .column(56, g - 11, g - 8, kLadder);
+        .column(53, g - 11, g - 8, kLadder);
     s.rampUp(66, g, 4, kRampUp, kGround).ground(70, 86, g - 4, kGround).rampDown(87, g, 4, kRampDown, kGround);
     s.row(72, 84, g - 9, kFoothold).column(78, g - 9, g - 5, kRope);
     s.row(96, 104, g - 3, kFoothold).row(100, 110, g - 7, kFoothold).column(108, g - 7, g - 1, kLadder).row(106, 116, g - 11, kFoothold)
-        .column(112, g - 11, g - 8, kRope);
+        .column(109, g - 11, g - 8, kRope);
     def.text = s.text();
     def.portals = {
         {.at = feetOn(2.5f, g), .to = MapId::SunkenArchive, .toPortal = 1},

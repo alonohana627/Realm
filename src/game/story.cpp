@@ -237,6 +237,10 @@ gamelib::core::DialogueTree buildTree()
                                                  "on Lighthouse Hill. The Barrel Hogs there may have rolled off with it. Find it?",
                                   "Lighthouse Hill is past Tidepool Shore, the far west of the coast.",
                                   "The lens is somewhere on Lighthouse Hill. The Barrel Hogs there love shiny things."},
+                                 {kQuestSeekChief, "The shards... Chief Oakhart of Mossbough keeps the old tales of the "
+                                                   "Fernwood. Will you go to him? The road east of the Market leads into the forest.",
+                                  "Through Fernwood Trail to Mossbough, the village in the trees. Climb up to the Chief.",
+                                  "Chief Oakhart lives in Mossbough, east through the Fernwood."},
                                  {kQuestUndercroft, "Below the Market lies the Undercroft, the old cellars of the first "
                                                     "harbor. An explorer called Nix went down weeks ago. Find her, and the third shard.",
                                   "The door is in the Market, past Kestrel's yard. Press up at it.",

@@ -80,9 +80,9 @@ const BossInfo& bossInfo(const BossId id)
 int bossHp(const BossId id)
 {
     switch (id) {
-    case BossId::Thornbark: return 14000;
-    case BossId::Frostmane: return 32000;
-    case BossId::Murkmaw: return 60000;
+    case BossId::Thornbark: return 12000;
+    case BossId::Frostmane: return 24000;
+    case BossId::Murkmaw: return 45000;
     case BossId::Count: break;
     }
     return 1000;
