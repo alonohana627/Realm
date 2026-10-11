@@ -87,7 +87,6 @@ Session::Session(const SaveData& save, const std::uint64_t seed)
     m_bossRespawn = save.bossRespawn;
     m_visited = save.visited;
     m_finished = save.finished;
-    m_bindings = save.bindings;
     refreshQuests();
     m_char.refreshResources();
     refreshDerived();
@@ -128,7 +127,6 @@ SaveData Session::save() const
     s.bossRespawn = m_bossRespawn;
     s.visited = m_visited;
     s.finished = m_finished;
-    s.bindings = m_bindings;
     return s;
 }
 
@@ -241,6 +239,7 @@ void Session::spawnInto(const int point, const bool immediate)
     }
     Monster m = makeMonster(sd.species, level, elite, feet, sd.run.left(), sd.run.right(), static_cast<std::uint8_t>(m_rng.range(0, 255)));
     m.spawn = point;
+    m.id = ++m_monsterIds;
     if (immediate) {
         m.stateTicks = m.stateLength - 1;
     }
@@ -1179,7 +1178,7 @@ void Session::hitMonster(Monster& m, const int percent, const bool magic, const 
     hurtMonster(m, dmg, direction, static_cast<int>(m_ticks), stunTicks > 14 ? stunTicks : 0, push);
     m_stats.bestHit = std::max(m_stats.bestHit, dmg);
     this->push({.kind = EventKind::Hit, .value = dmg, .extra = hitIndex, .at = {m.box.center().x, m.box.top()}, .crit = crit,
-                .facing = direction});
+                .facing = direction, .target = m.id});
     if (!m.alive()) {
         defeatMonster(m);
     }
@@ -1191,7 +1190,7 @@ void Session::hitBoss(const int percent, const bool magic, const int hitIndex)
     bool crit = false;
     const int dmg = damageRoll(percent, magic, monsterDefense(b.info().level), crit);
     m_stats.bestHit = std::max(m_stats.bestHit, dmg);
-    push({.kind = EventKind::Hit, .value = dmg, .extra = hitIndex, .at = {b.box.center().x, b.box.top()}, .crit = crit});
+    push({.kind = EventKind::Hit, .value = dmg, .extra = hitIndex, .at = {b.box.center().x, b.box.top()}, .crit = crit, .target = -1});
     if (hurtBoss(b, dmg, static_cast<int>(m_ticks))) {
         push({.kind = EventKind::BossDown, .value = static_cast<int>(b.id), .at = b.box.center()});
     }
@@ -1392,6 +1391,7 @@ void Session::tickBoss()
             Monster m = makeMonster(info.minion, std::max(1, info.level - 4), false, feet, b.bounds.left(), b.bounds.right(),
                                     static_cast<std::uint8_t>(m_rng.range(0, 255)));
             m.aggro = 900;
+            m.id = ++m_monsterIds;
             m_monsters.push_back(m);
             push({.kind = EventKind::Spawned, .value = static_cast<int>(info.minion), .at = feet});
         }

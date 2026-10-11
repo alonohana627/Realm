@@ -64,6 +64,7 @@ struct Monster {
     SpeciesId species = SpeciesId::Sproutcap;
     bool elite = false;
     int level = 1;
+    int id = 0;                   // unique while the session lives (stacked damage numbers)
     int spawn = -1;               // the spawner point it came from (-1: summoned)
     gamelib::core::Rect box;
     gamelib::core::Rect previous; // last tick's box, for drawing

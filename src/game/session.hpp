@@ -61,6 +61,7 @@ struct Event {
     bool crit = false;
     bool onHero = false;
     int facing = 1;
+    int target = 0; // the monster struck (Monster::id; -1 the boss)
 };
 
 enum class Phase : std::uint8_t { Playing, Dead };
@@ -135,7 +136,6 @@ struct SaveData {
     std::array<int, kBossCount> bossRespawn{}; // ticks until each boss returns
     std::array<bool, kMapCount> visited{};
     bool finished = false;
-    std::string bindings; // the character's key layout (app::readActionBindings text), kept as is
 };
 
 class Session {
@@ -171,8 +171,6 @@ public:
     [[nodiscard]] int chapter() const { return chapterOf(m_quests); }
     [[nodiscard]] bool portalOpen(int index) const;
     [[nodiscard]] int bossRespawn(BossId id) const { return m_bossRespawn[static_cast<std::size_t>(id)]; }
-    [[nodiscard]] const std::string& bindings() const { return m_bindings; }
-    void setBindings(std::string text) { m_bindings = std::move(text); }
 
     // What the hero could interact with now (for prompts).
     [[nodiscard]] std::optional<NpcId> npcInReach() const;
@@ -295,7 +293,6 @@ private:
     std::optional<NpcId> m_talk;
     std::optional<NpcId> m_talking;
     std::optional<std::string> m_service;
-    std::string m_bindings;
     bool m_saveWanted = false;
     bool m_finished = false;
     bool m_endingNow = false;
@@ -303,6 +300,7 @@ private:
     int m_mapTicks = 0;
     int m_regenTicks = 0;
     int m_attackId = 3'000'000;
+    int m_monsterIds = 0;
     // Starfall's second wave and Quake's shockwave land a little later.
     struct Delayed {
         int ticks = 0;
