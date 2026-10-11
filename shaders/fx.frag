@@ -22,6 +22,16 @@ const int kSlash = 0, kCrescent = 1, kStar = 2, kSpark = 3, kPetal = 4, kWind = 
 
 float px;
 
+// A regular hexagon with a flat top and bottom, `r` from the center to a side.
+float sdHex(vec2 p, float r)
+{
+    const vec3 k = vec3(-0.866025404, 0.5, 0.577350269);
+    p = abs(p);
+    p -= 2.0 * min(dot(k.xy, p), 0.0) * k.xy;
+    p -= vec2(clamp(p.x, -k.z * r, k.z * r), r);
+    return length(p) * sign(p.y);
+}
+
 float cover(float d)
 {
     return clamp(0.5 - d / px, 0.0, 1.0);
@@ -89,6 +99,32 @@ void main()
         vec2 q = rotate2d(u, seed + time * 3.0);
         float d = sdEllipse(q, vec2(0.75, 0.45));
         c = outlined(d, core, edge * 0.7, 0.08);
+    } else if (kind == kWind && variant > 0.5) {
+        // Swiftwind: wind streaks sliding back from the hero (u.x > 0 is
+        // ahead; variant 2 faces left) and dust trails at the feet.
+        if (variant > 1.5) {
+            u.x = -u.x; // facing left
+        }
+        float a = 0.0;
+        for (int i = 0; i < 6; ++i) {
+            float fi = float(i);
+            float y = -0.55 + fi * 0.2 + 0.03 * sin(time * 5.0 + fi);
+            float head = fract(time * (1.6 + fi * 0.21) + fi * 0.37);
+            float x0 = 0.5 - head * 1.6;
+            float len = 0.55 + 0.15 * sin(fi * 2.3);
+            float along = clamp((x0 - u.x) / len, 0.0, 1.0);
+            float d = abs(u.y - y - along * along * 0.04) - 0.045 * (1.0 - along * 0.7);
+            float inSeg = step(u.x, x0) * step(x0 - len, u.x);
+            a = max(a, cover(d) * inSeg * (1.0 - along) * smoothstep(0.0, 0.2, head) * (1.0 - smoothstep(0.8, 1.0, head)));
+        }
+        // Dust puffs trailing from the feet.
+        for (int i = 0; i < 3; ++i) {
+            float fi = float(i);
+            float k = fract(time * 2.2 + fi / 3.0);
+            vec2 at = vec2(-0.1 - k * 0.7, 0.8 - k * 0.08);
+            a = max(a, cover(length(u - at) - (0.05 + 0.08 * k)) * (1.0 - k) * 0.8);
+        }
+        c = vec4(mix(core, edge, 0.8), min(a * 1.2, 1.0));
     } else if (kind == kWind) {
         // A swirl of streaks around the hero (a buff).
         float r = length(u);
@@ -242,11 +278,22 @@ void main()
         c = vec4(edge, glowFalloff(d, 0.25) * fade * 0.8);
         c = over(vec4(vec3(1.6), cover(d) * fade), c);
     } else if (kind == kShield) {
-        float r = length(u);
-        float rim = glowFalloff(abs(r - 0.85) - 0.02, 0.15);
-        float hex = abs(fract(u.x * 5.0 + floor(u.y * 5.0) * 0.5) - 0.5) + abs(fract(u.y * 5.0) - 0.5);
-        c = vec4(core, (1.0 - smoothstep(0.84, 0.88, r)) * (0.12 + 0.1 * smoothstep(0.6, 0.7, hex)));
-        c = over(vec4(edge * 1.3, rim * (0.6 + 0.2 * sin(time * 3.0))), c);
+        // Mana Shield: a hexagonal ward, slowly turning, a honeycomb of
+        // cells inside and a bright rim with corner studs.
+        vec2 q = rotate2d(u, time * 0.35);
+        float hexD = sdHex(q, 0.82);
+        vec2 cellP = q * 6.0;
+        vec2 g = vec2(cellP.x * 1.1547, cellP.y + cellP.x * 0.5774);
+        vec2 f = fract(g) - 0.5;
+        float honey = smoothstep(0.38, 0.47, max(abs(f.x), abs(f.y)));
+        float inside = 1.0 - smoothstep(-0.01, 0.01, hexD);
+        float pulse = 0.5 + 0.5 * sin(time * 3.0);
+        c = vec4(core, inside * (0.1 + 0.16 * honey * (0.6 + 0.4 * pulse)));
+        c = over(vec4(edge * 1.35, glowFalloff(abs(hexD) - 0.015, 0.09) * (0.7 + 0.2 * pulse)), c);
+        for (int i = 0; i < 6; ++i) {
+            vec2 corner = vec2(cos(float(i) * 1.0472), sin(float(i) * 1.0472)) * 0.82 / cos(0.5236) * 0.9;
+            c = over(vec4(vec3(1.0), cover(length(q - corner) - 0.045)), c);
+        }
     } else if (kind == kRing) {
         float r = length(u);
         float d = abs(r - 0.3 - t * 0.65) - 0.06 * (1.0 - t);

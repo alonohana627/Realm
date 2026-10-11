@@ -837,10 +837,12 @@ void WorldView::drawHero(gamelib::draw::DrawList& list, const Shapes& shapes, co
     const Vec2 feet = heroFeet(session, alpha);
     list.setLayer(kLayerHero + 1);
     if (session.character().buffs.active(game::kBuffSwiftwind)) {
-        addFx(list, shapes, Fx::Wind, feet + Vec2{0.0f, -62.0f}, 240.0f, srgb(0xE8FFF4).withAlpha(0.7f), srgb(0x9AF0C8), 0.0f);
+        const float face = static_cast<float>(session.hero().body.facing);
+        addFxRect(list, shapes, Fx::Wind, {feet.x - 150.0f - face * 30.0f, feet.y - 140.0f, 300.0f, 150.0f}, srgb(0xFFFFFF),
+                  srgb(0x2EC88A), 0.0f, face < 0.0f ? 2.0f : 1.0f);
     }
     if (session.character().buffs.active(game::kBuffManaShield)) {
-        addFx(list, shapes, Fx::Shield, feet + Vec2{0.0f, -60.0f}, 190.0f, srgb(0xD8D0FF), srgb(0x9A8CFF), 0.0f);
+        addFx(list, shapes, Fx::Shield, feet + Vec2{0.0f, -62.0f}, 200.0f, srgb(0xC8E0FF), srgb(0x6AA8FF), 0.0f);
     }
 }
 
