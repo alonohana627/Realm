@@ -7,7 +7,8 @@
 // characters:
 //   params.x  kind: 0 a ground tile (draw::drawTiles), 1 a floating foothold
 //             run, 2 a rope, 3 a ladder, 4 a rope bridge run, 5 a ramp tile
-//             rising to +x, 6 a ramp tile rising to -x
+//             rising to +x, 6 a ramp tile rising to -x, 7 the harbor's water
+//             (params.zw its world origin)
 //   params.y  material: 0 grass, 1 sand, 2 wood, 3 snow, 4 stone, 5 moss
 //   params.z  the run's (or the tile's) world x (patterns stay in the world)
 //   color     the cap (grass, sand, snow...), color2 the earth
@@ -99,6 +100,46 @@ vec4 groundTile(SpriteData s, vec2 p, int kind, int material)
     return col;
 }
 
+// The harbor's water (kind 7): the quad is the sea from its surface down,
+// params.z/.w its world origin so the waves and light stay in the world.
+// A soft gradient from the shallow teal to the deep blue, a wavy surface
+// with a foam crest and an ink line, sliding reflections near the top and
+// caustic light patches fading with depth.
+vec4 water(SpriteData s, vec2 p, float time)
+{
+    vec2 half_ = s.size * 0.5;
+    vec2 world = vec2(s.params.z, s.params.w) + p + half_;
+    float depth = p.y + half_.y; // below the quad's top
+    float wave = sin(world.x * 0.021 + time * 1.4) * 3.0 + sin(world.x * 0.047 - time * 2.2) * 1.6 + sin(world.x * 0.11 + time * 3.1) * 0.6;
+    float surface = 8.0 + wave;
+    float d = surface - depth; // < 0 under the water
+    float aa = max(fwidth(depth), 0.6);
+    float inside = clamp(0.5 - d / aa, 0.0, 1.0);
+    if (inside <= 0.0) {
+        return vec4(0.0);
+    }
+    float below = depth - surface;
+    vec3 shallow = s.color.rgb;
+    vec3 deep = s.color2.rgb;
+    vec3 col = mix(shallow, deep, smoothstep(0.0, 150.0, below));
+    // Sliding reflections: thin light streaks in the top band.
+    float streak = sin(world.x * 0.035 + sin(below * 0.18 + time * 0.7) * 2.0 - time * 0.9) * sin(below * 0.55 + world.x * 0.004);
+    col = mix(col, vec3(1.0), smoothstep(0.82, 0.97, streak) * (1.0 - smoothstep(4.0, 46.0, below)) * 0.55);
+    // Caustics: soft light cells drifting, fading with depth.
+    vec2 q = world * vec2(0.011, 0.02) + vec2(time * 0.08, -time * 0.04);
+    float cell = valueNoise(q * 2.0 + valueNoise(q + time * 0.2) * 1.5);
+    float caustic = smoothstep(0.62, 0.78, cell) - smoothstep(0.78, 0.95, cell);
+    col += vec3(0.55, 0.85, 0.95) * caustic * 0.12 * (1.0 - smoothstep(10.0, 140.0, below));
+    // The surface: an ink line and a broken foam crest.
+    float line = clamp(1.0 - abs(d + 2.2) / 1.6, 0.0, 1.0);
+    col = mix(col, animeInkOf(deep) * 1.4, line * 0.55);
+    float foamBreak = smoothstep(0.35, 0.55, valueNoise(vec2(world.x * 0.05 - time * 0.6, time * 0.3)));
+    float foam = clamp(1.0 - abs(below - 3.5) / 3.0, 0.0, 1.0) * foamBreak;
+    col = mix(col, vec3(1.0), foam * 0.85);
+    float alpha = inside * mix(0.7, 0.94, smoothstep(0.0, 90.0, below));
+    return vec4(col, alpha * s.color.a);
+}
+
 void main()
 {
     SpriteData s = sprite;
@@ -109,6 +150,10 @@ void main()
     float time = s.time;
     if (kind == 0 || kind == 5 || kind == 6) {
         outColor = groundTile(s, p, kind, material);
+        return;
+    }
+    if (kind == 7) {
+        outColor = water(s, p, time);
         return;
     }
     AnimeCanvas c = animeBegin(p, 3.0);

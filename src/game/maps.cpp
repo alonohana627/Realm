@@ -103,7 +103,7 @@ const gamelib::core::TileShapes& tileShapes()
     using gamelib::core::TileShape;
     // Ropes are climbed like ladders: their top cell is a floor, so climbing
     // up a rope ends standing on the foothold it hangs from.
-    static const gamelib::core::TileShapes shapes{{kGround, TileShape::Solid},       {kFoothold, TileShape::OneWay},       {kBridge, TileShape::OneWay},
+    static const gamelib::core::TileShapes shapes{{kGround, TileShape::Solid},       {kFoothold, TileShape::OneWay},       {kBridge, TileShape::OneWay},       {kPier, TileShape::Solid},
                                                   {kRope, TileShape::Ladder},        {kLadder, TileShape::Ladder},
                                                   {kRampUp, TileShape::RampUpRight}, {kRampDown, TileShape::RampUpLeft}};
     return shapes;

@@ -43,6 +43,7 @@ private:
     struct Run {
         gamelib::core::Rect rect;
         Terrain kind = Terrain::Foothold;
+        bool pier = false; // a harbor pier: always wooden planks
     };
     void cacheMap(const game::MapDef& def) const;
     void drawBackdrop(gamelib::draw::DrawList& list, const Shapes& shapes, const game::Session& session) const;

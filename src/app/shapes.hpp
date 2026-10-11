@@ -28,12 +28,12 @@ struct Shapes {
 };
 
 // terrain.frag kinds.
-enum class Terrain : std::uint8_t { Ground, Foothold, Rope, Ladder, Bridge, RampUp, RampDown };
+enum class Terrain : std::uint8_t { Ground, Foothold, Rope, Ladder, Bridge, RampUp, RampDown, Water };
 
 // fx.frag kinds.
 enum class Fx : std::uint8_t {
     Slash, Crescent, Star, Spark, Petal, Wind, Portal, Shockwave, Warn, Shot, LevelUp, Coin, LootGlow, Puff, Streak, Plus, Bolt,
-    Lightning, Shield, Ring, Root, Beam, Glow, Leaf, Snow
+    Lightning, Shield, Ring, Root, Beam, Glow, Leaf, Snow, Gull
 };
 
 // ui.frag kinds.

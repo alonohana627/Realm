@@ -6,7 +6,7 @@
 // petals, wind swirls, portals, shockwaves, warnings, hostile shots, the
 // level-up pillar, coins, loot glows, dust puffs, glowing streaks, heal
 // pluses, arcane bolts, lightning, shields, rings, roots, beams, glows,
-// leaves and snowflakes. Soft, bright and outlined like the rest of the
+// leaves, snowflakes and far gulls. Soft, bright and outlined like the rest of the
 // world, glowing above 1 for the bloom pass.
 //
 // The quad is the effect's box; u is the pixel in -1..1 over it.
@@ -18,7 +18,7 @@ layout(location = 0) out vec4 outColor;
 
 const int kSlash = 0, kCrescent = 1, kStar = 2, kSpark = 3, kPetal = 4, kWind = 5, kPortal = 6, kShockwave = 7, kWarn = 8,
           kShot = 9, kLevelUp = 10, kCoin = 11, kLootGlow = 12, kPuff = 13, kStreak = 14, kPlus = 15, kBolt = 16,
-          kLightning = 17, kShield = 18, kRing = 19, kRoot = 20, kBeam = 21, kGlow = 22, kLeaf = 23, kSnow = 24;
+          kLightning = 17, kShield = 18, kRing = 19, kRoot = 20, kBeam = 21, kGlow = 22, kLeaf = 23, kSnow = 24, kGull = 25;
 
 float px;
 
@@ -278,6 +278,12 @@ void main()
         float d = sdLock(q, vec2(-0.6, 0.0), vec2(0.0, -0.35), vec2(0.6, 0.0), 0.32, 0.02);
         c = outlined(d, core, edge, 0.08);
         c = over(vec4(edge, cover(max(abs(q.y + 0.05 * q.x) - 0.02, abs(q.x) - 0.5)) * c.a), c);
+    } else if (kind == kGull) {
+        // A far gull: two soft wing arcs meeting at the body, flapping.
+        float flap = sin(time * 6.0 + seed * 7.0) * 0.28;
+        vec2 q = vec2(abs(u.x), u.y);
+        float d = sdBezier(q, vec2(0.0, 0.08), vec2(0.4, -0.42 - flap * 0.5), vec2(0.9, -0.08 - flap)) - 0.075;
+        c = outlined(d, core, edge, 0.07);
     } else {
         // A snowflake.
         vec2 q = rotate2d(u, seed + time);

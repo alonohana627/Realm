@@ -237,7 +237,9 @@ void WorldView::snap(const game::Session& session)
     // The camera stops a little below the lowest floor, so the earth under
     // the ground shows as a band, not half the screen.
     const gamelib::core::TileWorld world{session.map().tiles, 0, game::tileShapes()};
-    m_camera.setBounds(gamelib::core::boundsAboveLowestFloor(session.map().bounds(), world, 3.3f * game::kTile));
+    // A harbor shows more of its sea below the piers.
+    const float below = session.map().water >= 0.0f ? 6.0f : 3.3f;
+    m_camera.setBounds(gamelib::core::boundsAboveLowestFloor(session.map().bounds(), world, below * game::kTile));
     m_camera.centerOn(session.hero().body.box.bottomCenter() + Vec2{0.0f, -140.0f});
     m_squash.reset();
 }
@@ -374,6 +376,9 @@ void WorldView::cacheMap(const game::MapDef& def) const
             if (ch == game::kBridge) {
                 return 2;
             }
+            if (ch == game::kPier) {
+                return 3;
+            }
             if (climbable(ch) && at(c.x, c.y - 1) != ch
                 && (at(c.x - 1, c.y) == game::kFoothold || at(c.x + 1, c.y) == game::kFoothold)) {
                 return 1;
@@ -384,8 +389,8 @@ void WorldView::cacheMap(const game::MapDef& def) const
         const float left = static_cast<float>(run.first) * t;
         const float width = static_cast<float>(run.length()) * t;
         const float top = static_cast<float>(run.line) * t;
-        if (run.kind == 1) {
-            m_runs.push_back({.rect = {left - 12.0f, top - 14.0f, width + 24.0f, 72.0f}, .kind = Terrain::Foothold});
+        if (run.kind == 1 || run.kind == 3) {
+            m_runs.push_back({.rect = {left - 12.0f, top - 14.0f, width + 24.0f, 72.0f}, .kind = Terrain::Foothold, .pier = run.kind == 3});
         } else {
             m_runs.push_back({.rect = {left - 12.0f, top - 16.0f, width + 24.0f, 64.0f}, .kind = Terrain::Bridge});
         }
@@ -469,10 +474,23 @@ void WorldView::drawTerrain(gamelib::draw::DrawList& list, const Shapes& shapes,
         }
         list.setLayer(r.kind == Terrain::Foothold || r.kind == Terrain::Bridge ? kLayerFoothold : kLayerClimb);
         list.add({.rect = r.rect,
-                  .color = r.kind == Terrain::Foothold ? footCap : srgb(0xFFFFFF),
-                  .color2 = footBody,
+                  .color = r.pier ? srgb(0xD49A5C) : r.kind == Terrain::Foothold ? footCap : srgb(0xFFFFFF),
+                  .color2 = r.pier ? srgb(0x9A6A42) : footBody,
                   .shape = shapes.terrain,
-                  .params = {static_cast<float>(r.kind), footMaterial, r.rect.x, 0.0f}});
+                  .params = {static_cast<float>(r.kind), r.pier ? 2.0f : footMaterial, r.rect.x, 0.0f}});
+    }
+    // The harbor's sea under the piers and in front of the quay wall: over
+    // the hulls and the posts below the surface, under the planks.
+    if (def.water >= 0.0f) {
+        const Rect b = def.bounds();
+        const Rect sea{b.x - 200.0f, def.water, b.width + 400.0f, b.bottom() - def.water + 200.0f};
+        const float night = session.nightAmount();
+        list.setLayer(kLayerFoothold - 2);
+        list.add({.rect = sea,
+                  .color = gamelib::core::lerp(srgb(0x6FD3E8), srgb(0x3A6A9A), night * 0.6f),
+                  .color2 = gamelib::core::lerp(srgb(0x2A7AB8), srgb(0x1A2E5A), night * 0.6f),
+                  .shape = shapes.terrain,
+                  .params = {static_cast<float>(Terrain::Water), 0.0f, sea.x, sea.y}});
     }
 }
 
@@ -529,7 +547,23 @@ void WorldView::drawDecos(gamelib::draw::DrawList& list, const Shapes& shapes, c
         Color b;
         decoColors(DecoKind::Boat, def, 0, a, b);
         list.setLayer(kLayerDecoBack - 2);
-        list.add(decoSprite(shapes, static_cast<int>(DecoKind::Boat), def.dock + Vec2{0.0f, 70.0f}, size.width, size.height, a, b, lit, 0.0f, 1.0f));
+        // Afloat where the harbor has water, its keel under the surface.
+        const float sink = def.water >= 0.0f ? 100.0f : 70.0f;
+        list.add(decoSprite(shapes, static_cast<int>(DecoKind::Boat), def.dock + Vec2{0.0f, sink}, size.width, size.height, a, b, lit, 0.0f, 1.0f));
+    }
+    // Gulls wheel over the harbor, high in the sky.
+    if (def.water >= 0.0f) {
+        const Rect v = visible();
+        const float time = static_cast<float>(session.ticks()) / static_cast<float>(game::kTickRate);
+        list.setLayer(kLayerSkyline + 1);
+        for (int i = 0; i < 4; ++i) {
+            const float fi = static_cast<float>(i);
+            const float speed = 40.0f + fi * 13.0f;
+            const float span = v.width + 400.0f;
+            const float x = v.x - 200.0f + std::fmod(time * speed + fi * 523.0f, span);
+            const float y = v.y + v.height * (0.14f + 0.07f * fi) + std::sin(time * 0.7f + fi * 2.0f) * 24.0f;
+            addFx(list, shapes, Fx::Gull, {x, y}, 54.0f - fi * 6.0f, srgb(0xFFFFFF), srgb(0x6A7A9A), 0.0f, 0.0f, fi * 1.7f);
+        }
     }
     for (const game::Deco& d : def.decos) {
         ++index;

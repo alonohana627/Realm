@@ -28,8 +28,12 @@ void docks(MapDef& def)
     def.name = "Saltwhistle Docks";
     def.kind = MapKind::Town;
     constexpr int g = 21;
-    TileSketch s{112, 26};
-    s.ground(0, 111, g, kGround);
+    TileSketch s{112, 29};
+    // The shore at both ends, wooden piers over the water to the moorings,
+    // and the stone quay between them with the sea in front of its wall.
+    s.fill(0, 6, g, g + 1, kGround).fill(104, 111, g, g + 1, kGround);
+    s.fill(29, 86, g, g + 1, kGround);
+    s.row(7, 28, g, kPier).row(87, 103, g, kPier);
     // Walkways over the warehouses, up ladders.
     s.row(30, 44, g - 6, kFoothold).column(29, g - 6, g - 1, kLadder);
     s.row(64, 78, g - 6, kFoothold).column(79, g - 6, g - 1, kLadder);
@@ -40,8 +44,18 @@ void docks(MapDef& def)
         {.at = feetOn(109.0f, g), .to = MapId::SaltwhistleMarket, .toPortal = 0},
     };
     def.dock = feetOn(16.0f, g);
+    def.water = g * kTile + 44.0f;
     const float y = g * kTile;
+    const float sea = y + 112.0f; // the posts' feet, under the water
     def.decos = {
+        // The piers stand on posts in the water.
+        {K::Post, {tx(7.6f), sea}, 0, 1.25f, false},  {K::Post, {tx(12.0f), sea}, 0, 1.25f, false},
+        {K::Post, {tx(20.0f), sea}, 0, 1.25f, false}, {K::Post, {tx(24.5f), sea}, 0, 1.25f, false},
+        {K::Post, {tx(28.4f), sea}, 0, 1.25f, false}, {K::Post, {tx(87.6f), sea}, 0, 1.25f, false},
+        {K::Post, {tx(92.0f), sea}, 0, 1.25f, false}, {K::Post, {tx(97.0f), sea}, 0, 1.25f, false},
+        {K::Post, {tx(102.4f), sea}, 0, 1.25f, false},
+        // Mooring posts on the deck edges.
+        {K::Post, {tx(9.0f), y}, 0, 0.9f, true},       {K::Post, {tx(26.5f), y}, 1, 0.9f, true},
         {K::Post, {tx(5.0f), y}, 0, 1.0f, true},
         {K::Lantern, {tx(8.0f), y}, 0, 1.0f, false},
         {K::Crate, {tx(11.0f), y}, 0, 1.0f, false},
@@ -63,10 +77,10 @@ void docks(MapDef& def)
         {K::Sign, {tx(104.0f), y}, 2, 1.0f, false},
         {K::Post, {tx(100.0f), y}, 1, 1.0f, true},
         // A fishing boat at the east mooring, nets and the day's catch.
-        {K::Boat, {tx(97.5f), y + 40.0f}, 1, 0.5f, false},
+        {K::Boat, {tx(96.5f), y + 105.0f}, 1, 0.55f, false},
         {K::Crate, {tx(94.2f), y}, 1, 0.85f, false},
-        {K::Shell, {tx(6.5f), y}, 0, 1.0f, true},
-        {K::Shell, {tx(90.5f), y}, 1, 1.0f, true},
+        {K::Shell, {tx(3.5f), y}, 0, 1.0f, true},
+        {K::Shell, {tx(107.5f), y}, 1, 1.0f, true},
         {K::Bench, {tx(27.0f), y}, 0, 1.0f, false},
         {K::FlowerPot, {tx(46.6f), y}, 1, 0.9f, false},
         {K::Lantern, {tx(62.5f), y}, 0, 1.0f, false},
@@ -80,7 +94,7 @@ void docks(MapDef& def)
     // The hazy harbor behind: the Market's roofs, masts and the lighthouse.
     const float back = y - 40.0f;
     def.skyline = {
-        {K::Lighthouse, {tx(6.0f), back - 60.0f}, 0, 0.7f, false}, {K::House, {tx(18.0f), back}, house(H::Townhouse), 0.55f, false, 8},
+        {K::Rock, {tx(6.0f), back + 10.0f}, 0, 2.2f, false},     {K::Lighthouse, {tx(6.0f), back - 50.0f}, 0, 0.7f, false}, {K::House, {tx(18.0f), back}, house(H::Townhouse), 0.55f, false, 8},
         {K::House, {tx(30.0f), back}, house(H::Cottage), 0.5f, false, 9},  {K::Boat, {tx(44.0f), back + 30.0f}, 0, 0.6f, false},
         {K::House, {tx(58.0f), back}, house(H::Inn), 0.55f, false, 10},    {K::House, {tx(72.0f), back}, house(H::Bakery), 0.5f, false, 4},
         {K::Boat, {tx(84.0f), back + 30.0f}, 1, 0.55f, false},               {K::House, {tx(98.0f), back}, house(H::Townhouse), 0.55f, false, 11},

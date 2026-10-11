@@ -45,6 +45,7 @@ inline constexpr char kLadder = 'H';
 inline constexpr char kRampUp = '/';    // rises to the right
 inline constexpr char kRampDown = '\\'; // rises to the left
 inline constexpr char kBridge = '~';    // a rope bridge (one-way, drawn sagging)
+inline constexpr char kPier = 'P';      // a wooden pier over the water (solid, drawn as planks)
 
 [[nodiscard]] const gamelib::core::TileShapes& tileShapes();
 
@@ -129,6 +130,7 @@ struct MapDef {
     int eliteChance = 4;      // percent per spawn
     int populationCap = 0;    // at most this many monsters at once (0: one per spawn slot)
     gamelib::core::Vec2 dock; // the ship's mooring (Petal Pier and the docks), x < 0: none
+    float water = -1.0f;      // the sea's surface (world y) under the piers; < 0: no water
     gamelib::core::TileMap tiles{1, 1, kTile};
 
     [[nodiscard]] gamelib::core::Rect bounds() const

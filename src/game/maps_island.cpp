@@ -228,18 +228,24 @@ void petalPier(MapDef& def)
     def.name = "Petal Pier";
     def.kind = MapKind::Town;
     constexpr int g = 20;
-    TileSketch s{72, 26};
+    TileSketch s{72, 28};
     // The beach, then the pier out over the water.
     s.ground(0, 40, g, kGround);
-    s.row(41, 71, g, kFoothold);
+    s.row(41, 71, g, kPier);
     s.row(18, 26, g - 4, kFoothold).column(17, g - 4, g - 1, kLadder);
     def.text = s.text();
     def.portals = {
         {.at = feetOn(2.5f, g), .to = MapId::BreezyBluff, .toPortal = 1},
     };
     def.dock = feetOn(60.0f, g);
+    def.water = g * kTile + 44.0f;
     const float y = g * kTile;
+    const float sea = y + 112.0f;
     def.decos = {
+        {K::Post, {tx(41.6f), sea}, 0, 1.25f, false}, {K::Post, {tx(47.0f), sea}, 0, 1.25f, false},
+        {K::Post, {tx(53.0f), sea}, 0, 1.25f, false}, {K::Post, {tx(64.0f), sea}, 0, 1.25f, false},
+        {K::Post, {tx(70.4f), sea}, 0, 1.25f, false},
+        {K::Boat, {tx(45.0f), y + 105.0f}, 1, 0.5f, false},
         {K::Sign, {tx(8.0f), y}, 1, 1.0f, false},
         {K::House, {tx(22.0f), y}, house(H::Dockhouse), 0.95f, false, 1},
         {K::Barrel, {tx(28.0f), y}, 0, 1.0f, false},
