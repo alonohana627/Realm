@@ -981,8 +981,14 @@ void WorldView::draw(gamelib::draw::DrawList& list, const Shapes& shapes, const 
     drawBackdrop(list, shapes, session);
     drawDecos(list, shapes, session);
     drawTerrain(list, shapes, session);
-    drawPortals(list, shapes, session, time);
     const Vec2 feet = heroFeet(session, alpha);
+    if (m_scenery) {
+        // Only the place: the ending's stage.
+        drawLights(list, session, alpha);
+        list.setView({});
+        return;
+    }
+    drawPortals(list, shapes, session, time);
     list.setLayer(kLayerBehindFx);
     effects.drawBehind(list, shapes, feet, time);
     drawNpcs(list, shapes, session, time);

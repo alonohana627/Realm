@@ -33,6 +33,8 @@ public:
               float alpha, float time, gamelib::core::Vec2 shake) const;
 
     [[nodiscard]] gamelib::core::View2D view(gamelib::core::Vec2 shake = {}) const { return m_camera.view(shake); }
+    // Scenery only (no one in it, no portals or labels): the ending's stage.
+    void setScenery(const bool scenery) { m_scenery = scenery; }
     [[nodiscard]] gamelib::core::Rect visible() const;
     [[nodiscard]] gamelib::core::Vec2 heroFeet(const game::Session& session, float alpha) const;
 
@@ -62,6 +64,7 @@ private:
 
     gamelib::core::Size m_canvas;
     gamelib::core::Camera2D m_camera;
+    bool m_scenery = false;
     game::MapId m_map = game::MapId::Count;
     mutable game::MapId m_cached = game::MapId::Count;
     mutable std::vector<Run> m_runs;

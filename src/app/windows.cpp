@@ -1004,13 +1004,15 @@ void Windows::drawWorldMap(gamelib::draw::DrawList& list, const Shapes& shapes, 
     };
     // Region names.
     const Font regionFont = kit::outlined(30.0f, 1.6f);
-    const std::array<std::pair<game::MapId, std::string_view>, 5> regions{{{game::MapId::Petalbrook, "Petal Isle"},
-                                                                           {game::MapId::SaltwhistleMarket, "Saltwhistle"},
-                                                                           {game::MapId::Mossbough, "Fernwood"},
-                                                                           {game::MapId::CliffsideClimb, "Windcrest Pass"},
-                                                                           {game::MapId::DeepHollow, "The Undercroft"}}};
-    for (const auto& [id, name] : regions) {
-        gamelib::draw::drawText(list, regionFont, name, at(id).x, at(id).y - 120.0f, srgb(0xFFF8E8), Align::Center);
+    // Each region's name in an open spot beside its paths (map fractions).
+    const std::array<std::pair<Vec2, std::string_view>, 5> regions{{{{-0.62f, 0.0f}, "Petal Isle"},
+                                                                   {{-0.02f, 0.26f}, "Saltwhistle"},
+                                                                   {{0.62f, 0.44f}, "Fernwood"},
+                                                                   {{0.2f, -0.55f}, "Windcrest Pass"},
+                                                                   {{0.3f, 0.86f}, "The Undercroft"}}};
+    for (const auto& [pin, name] : regions) {
+        const Vec2 p{map.center().x + pin.x * map.width * 0.5f, map.center().y + pin.y * map.height * 0.5f};
+        gamelib::draw::drawText(list, regionFont, name, p.x, regionFont.topFor(p.y), srgb(0xFFF8E8), Align::Center);
     }
     // The paths between maps, and the ship's route.
     const gamelib::core::WorldGraph& graph = game::worldGraph();

@@ -296,6 +296,7 @@ void RealmGame::onKey(gamelib::app::App& app, const gamelib::platform::KeyEvent&
                                 .holdSeconds = 0.2f, .uncoverSeconds = 0.8f},
                                [this] {
                                    m_mode = Mode::Play;
+                                   m_view.setScenery(false);
                                    m_menus.go(ArcadeScreen::Playing, m_time);
                                    m_hud.banner("the journey goes on", "the realm is yours to roam", srgb(0xFFE08A), 4.0f);
                                });
@@ -376,6 +377,7 @@ void RealmGame::onGamepad(gamelib::app::App& app, const gamelib::platform::Gamep
     case Mode::Ending:
         if (m_endingTime > kEndingInputDelay && input) {
             m_mode = Mode::Play;
+            m_view.setScenery(false);
             m_menus.go(ArcadeScreen::Playing, m_time);
         }
         return;
@@ -924,6 +926,12 @@ void RealmGame::startEnding(gamelib::app::App& app)
                        [this, &app] {
                            m_mode = Mode::Ending;
                            m_endingTime = 0.0f;
+                           // The stage: Saltwhistle's fountain square (Quill waits by the docks).
+                           m_session->debugTeleport(game::MapId::SaltwhistleMarket, 0);
+                           m_session->debugMove(44.0f * game::kTile);
+                           (void)m_session->events().take();
+                           m_view.snap(*m_session);
+                           m_view.setScenery(true);
                            m_windows.close();
                            m_dialogue.close();
                            m_runner.reset();

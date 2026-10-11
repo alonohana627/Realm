@@ -329,26 +329,30 @@ void RealmGame::drawVoyage(gamelib::draw::DrawList& list, const float time) cons
                                      .params = {0.0f, night}, .bits = bits},
         gamelib::draw::ParallaxLayer{.shape = m_shapes.backdrop, .factor = {0.08f, 0.0f}, .color = look.cloud, .color2 = look.cloudShade,
                                      .params = {1.0f, night}, .bits = bits},
-        gamelib::draw::ParallaxLayer{.shape = m_shapes.backdrop, .factor = {0.2f, 0.0f}, .color = look.far, .color2 = look.farRim,
-                                     .params = {2.0f, night}, .bits = bits},
-        gamelib::draw::ParallaxLayer{.shape = m_shapes.backdrop, .factor = {0.5f, 0.0f}, .color = look.near, .color2 = look.nearRim,
-                                     .params = {3.0f, night}, .bits = bits},
     };
     list.setLayer(layers::Background);
     gamelib::draw::drawParallax(list, layersList, camera, m_canvas);
     list.setLayer(layers::Hud);
-    // The sea in front: soft bands of waves.
+    // The open sea: far water to the horizon with a few hazy islets,
+    // then the ship, then the near waves over its keel (the terrain
+    // shader's water, scrolling with the voyage).
     const float scale = 1.5f;
-    const Vec2 ground{kW * 0.5f, 900.0f};
-    for (int band = 0; band < 3; ++band) {
-        const float y = 820.0f + static_cast<float>(band) * 70.0f;
-        list.box({0.0f, y, kW, kH - y}, srgb(band == 0 ? 0x5EB8E0 : band == 1 ? 0x4AA4D4 : 0x3A8CC4, 0.75f));
-        for (int i = 0; i < 12; ++i) {
-            const float x = std::fmod(static_cast<float>(i) * 190.0f - m_voyageTime * (60.0f + static_cast<float>(band) * 50.0f) + 4000.0f, kW + 200.0f) - 100.0f;
-            addFx(list, m_shapes, Fx::Spark, {x, y + 8.0f + std::sin(time * 2.0f + static_cast<float>(i)) * 4.0f}, 26.0f, srgb(0xFFFFFF, 0.8f),
-                  srgb(0xBFEAFF), std::fmod(time * 0.7f + static_cast<float>(i) * 0.13f, 1.0f));
-        }
+    const Vec2 ground{kW * 0.5f, 880.0f};
+    const float horizon = 560.0f;
+    for (int i = 0; i < 3; ++i) {
+        const float x = std::fmod(static_cast<float>(i) * 760.0f + 300.0f - m_voyageTime * 18.0f + 4000.0f, kW + 600.0f) - 300.0f;
+        list.add({.rect = {x - 160.0f, horizon - 44.0f, 320.0f, 88.0f}, .color = gamelib::core::lerp(look.far, look.skyHorizon, 0.45f),
+                  .shape = gamelib::draw::shapes::Circle});
     }
+    list.box({0.0f, horizon, kW, kH - horizon}, gamelib::core::lerp(srgb(0x7ACCE8), srgb(0x3A5A8A), night * 0.6f));
+    const auto sea = [&](const float top, const float alpha) {
+        list.add({.rect = {-40.0f, top, kW + 80.0f, kH - top + 40.0f},
+                  .color = gamelib::core::lerp(srgb(0x6FD3E8), srgb(0x3A6A9A), night * 0.6f).withAlpha(alpha),
+                  .color2 = gamelib::core::lerp(srgb(0x2A7AB8), srgb(0x1A2E5A), night * 0.6f),
+                  .shape = m_shapes.terrain,
+                  .params = {static_cast<float>(Terrain::Water), 0.0f, m_voyageTime * 160.0f, top}});
+    };
+    sea(horizon + 60.0f, 0.6f);
     const struct {
         float width;
         float height;
@@ -367,11 +371,12 @@ void RealmGame::drawVoyage(gamelib::draw::DrawList& list, const float time) cons
     captain.phase = time;
     captain.facing = 1.0f;
     list.add(anime::avatarSprite(captain, m_shapes.avatar));
+    sea(ground.y - 112.0f + rock * 0.2f, 1.0f);
     // Gulls wheel overhead.
     for (int i = 0; i < 3; ++i) {
         const float t = time * 0.5f + static_cast<float>(i) * 2.1f;
         const Vec2 p{kW * 0.5f + std::cos(t) * (420.0f + static_cast<float>(i) * 90.0f), 260.0f + std::sin(t * 1.7f) * 50.0f + static_cast<float>(i) * 40.0f};
-        addFx(list, m_shapes, Fx::Leaf, p, 40.0f, srgb(0xFFFFFF), srgb(0x8AA0C0), std::fmod(t, 1.0f), 1.0f, 0.0f, std::sin(t) * 0.4f);
+        addFx(list, m_shapes, Fx::Gull, p, 64.0f, srgb(0xFFFFFF), srgb(0x6A7A9A), 0.0f, 0.0f, static_cast<float>(i) * 1.7f);
     }
     const std::string where = m_session ? std::string{game::mapDef(m_session->travelTarget()).name} : std::string{};
     const Font f = kit::outlined(40.0f, 1.7f);
