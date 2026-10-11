@@ -142,7 +142,7 @@ Rig rigFor(int pose, float ph, float time, float seed, uint weapon)
     if (pose == kPoseIdle) {
         r.handN += vec2(0.0, breathe * 0.5);
         r.handF += vec2(0.0, -breathe * 0.4);
-        r.headTilt = 0.03 * sin(time * 0.9 + seed * 3.0);
+        r.headTilt = 0.0;
     } else if (pose == kPoseWalk) {
         r.footN = vec2(7.5 + 8.5 * wave, 56.0 - max(0.0, lift) * 5.0);
         r.footF = vec2(-3.5 - 8.5 * wave, 56.0 - max(0.0, -lift) * 5.0);
@@ -221,19 +221,20 @@ Rig rigFor(int pose, float ph, float time, float seed, uint weapon)
         r.lean = mix(-0.08 * wind, 0.12, fling);
     } else if (pose == kPoseProne) {
         // Lying flat, chin on the hands (MapleStory's prone).
-        r.head = vec2(19.0, 36.0);
-        r.neck = vec2(8.0, 44.0);
-        r.shoulderN = vec2(8.0, 44.0);
-        r.shoulderF = vec2(6.0, 43.0);
-        r.hipN = vec2(-12.0, 49.0);
-        r.hipF = vec2(-13.0, 48.0);
-        r.handN = vec2(22.0, 50.0);
-        r.handF = vec2(20.0, 49.0);
-        r.footN = vec2(-30.0, 56.0);
-        r.footF = vec2(-31.0, 54.0);
+        // A level lie: the body flat at a low height, the head at the front
+        // resting on the folded arms, the legs straight behind.
+        r.head = vec2(19.0, 33.5);
+        r.neck = vec2(9.0, 49.5);
+        r.shoulderN = vec2(8.0, 49.0);
+        r.shoulderF = vec2(6.0, 48.0);
+        r.hipN = vec2(-12.0, 50.0);
+        r.hipF = vec2(-13.0, 49.0);
+        r.handN = vec2(21.0, 52.5);
+        r.handF = vec2(17.0, 52.0);
+        r.footN = vec2(-29.0, 54.0);
+        r.footF = vec2(-30.0, 53.0);
         bendN = 1.0;
         bendF = 1.0;
-        r.headTilt = -0.15;
     } else if (pose == kPoseSit) {
         r.hipN = vec2(4.0, 47.0);
         r.hipF = vec2(-4.0, 47.0);
@@ -268,12 +269,14 @@ Rig rigFor(int pose, float ph, float time, float seed, uint weapon)
     r.grip = r.handN;
     vec2 forearm = normalize(r.handN - r.elbowN);
     if (weapon == kWeaponStaff || weapon == kWeaponTool) {
-        r.gripDir = pose == kPoseCast ? normalize(vec2(0.45, -1.0)) : (pose == kPoseSwing ? forearm : vec2(0.04, -1.0));
+        r.gripDir = pose == kPoseCast ? normalize(vec2(0.45, -1.0)) : pose == kPoseProne ? normalize(vec2(1.0, -0.12)) : (pose == kPoseSwing ? forearm : vec2(0.04, -1.0));
     } else if (weapon == kWeaponWand) {
         r.gripDir = pose == kPoseCast ? normalize(vec2(1.0, -0.5)) : forearm;
     } else if (pose == kPoseSwing) {
         float a = mix(-1.75, 0.85, smoothstep(0.35, 0.55, ph));
         r.gripDir = vec2(cos(a), sin(a));
+    } else if (pose == kPoseProne) {
+        r.gripDir = normalize(vec2(1.0, -0.08)); // held forward along the ground
     } else if (pose == kPoseJump || pose == kPoseHurt || pose == kPoseThrow) {
         r.gripDir = forearm;
     } else if (pose == kPoseCheer || twoHanded(weapon)) {
@@ -591,7 +594,7 @@ void main()
 
     // ---- 2. back hair
     vec2 hb = hpx; // back hair in the head's frame
-    if (!prone) {
+    {
         if (hairStyle == kHairPonytail) {
             vec2 tie = head + vec2(-17.0, -16.0);
             animePart(C, sdLockBelly(hb, tie, tie + vec2(-12.0 - sway, 6.0), tie + vec2(-14.0 - sway * 2.0, 30.0), 7.0, 1.2), hair);
@@ -663,7 +666,7 @@ void main()
     float torsoHalf = (r.hipN.y - r.neck.y) * 0.5;
     if (prone) {
         // Lying down: the body is a rounded log from shoulders to hips.
-        float body = sdSegment(p, r.shoulderN + vec2(-2.0, 1.0), r.hipN + vec2(2.0, -1.0), 7.5);
+        float body = sdSegment(p, r.shoulderN + vec2(-1.0, 0.0), r.hipN + vec2(2.0, 0.0), 6.5);
         animePart(C, body, cloth);
         animePart(C, max(body, abs(p.x - (r.hipN.x + 6.0)) - 2.0), leather);
     } else if (top == kTopRobe) {
@@ -785,7 +788,7 @@ void main()
     float fringe = climbing ? sdEllipse(hp - head - vec2(0.0, -2.0), vec2(22.0, 21.0)) : fringeShape(hp, hc, hairStyle);
     float shine = animeHairShine(C, hp, head + vec2(-1.0, -6.0), 17.5, 1.8) * 0.55;
     vec3 sheen = mix(s.color.rgb, vec3(1.0), 0.34);
-    if (!prone || true) {
+    {
         animePartShine(C, cap, hair, shine, sheen);
         animePartShine(C, fringe, hair, climbing ? 0.0 : shine, sheen);
         animeLine(C, max(sdBezier(hp, hc + vec2(-1.0, -28.0), hc + vec2(-5.0, -21.0), hc + vec2(-8.0, -14.0)), cap + 0.8), hair.ink);
@@ -808,7 +811,7 @@ void main()
 
     // ---- 11. hat
     AnimeMaterial hatMat = animeCloth(hatColor);
-    vec2 hh = rotate2d(hp - head, 0.05 * turn) + head;
+    vec2 hh = rotate2d(hp - head, 0.025 * turn) + head;
     if (hat == kHatWizard) {
         vec2 brim = head + vec2(turn * 5.0, -24.0);
         vec2 radii = vec2(hh.x < brim.x ? 23.0 : 28.0, 5.0);

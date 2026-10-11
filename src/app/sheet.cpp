@@ -123,7 +123,7 @@ void drawSheet(gamelib::draw::DrawList& list, const Shapes& shapes, const gameli
             a.skin = static_cast<std::uint8_t>(i % 4);
             a.seed = static_cast<std::uint8_t>(i * 31);
             a.weapon = anime::Weapon::None;
-            a.expression = i % 3 == 1 ? anime::Expression::Happy : anime::Expression::Neutral;
+            a.expression = anime::Expression::Neutral;
             put(list, shapes, a, {w * (0.08f + 0.12f * static_cast<float>(i)), 1000.0f}, 300.0f);
         }
         put(list, shapes, beginner(), {w - 60.0f, 700.0f}, 158.0f);
