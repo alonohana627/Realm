@@ -130,6 +130,32 @@ void mossbough(MapDef& def)
         {K::Banner, {tx(64.0f), t3}, 2, 0.9f, false},
         {K::Sign, {tx(95.0f), t3}, 3, 1.0f, false},
         {K::Lantern, {tx(70.0f), t3}, 0, 0.9f, false},
+        // Garlands over the rope bridges, pots and crates on the branches.
+        {K::Bunting, {tx(27.0f), t1 - 150.0f}, 0, 1.1f, false},
+        {K::Bunting, {tx(78.0f), t1 - 150.0f}, 1, 1.0f, false},
+        {K::Bunting, {tx(52.5f), t2 - 150.0f}, 1, 1.2f, false},
+        {K::Bunting, {tx(27.0f), t2 - 150.0f}, 0, 1.1f, false},
+        {K::Bunting, {tx(54.0f), t3 - 150.0f}, 0, 1.1f, false},
+        {K::FlowerPot, {tx(18.6f), t1}, 0, 0.9f, false},
+        {K::FlowerPot, {tx(35.6f), t1}, 1, 0.9f, false},
+        {K::Crate, {tx(46.0f), t1}, 0, 0.8f, false},
+        {K::FlowerPot, {tx(86.0f), t1}, 0, 0.9f, false},
+        {K::Barrel, {tx(96.0f), t1}, 1, 0.85f, false},
+        {K::Mushroom, {tx(93.0f), t2}, 2, 0.45f, false},
+        {K::FlowerPot, {tx(18.0f), t2}, 1, 0.85f, false},
+        {K::Bench, {tx(44.0f), t2}, 0, 0.9f, false},
+        {K::Lantern, {tx(61.0f), t2}, 0, 0.9f, false},
+        {K::FlowerPot, {tx(46.0f), t3}, 0, 0.85f, false},
+        {K::Mushroom, {tx(12.0f), y}, 2, 0.6f, true},
+        {K::Mushroom, {tx(72.0f), y}, 2, 0.5f, true},
+        {K::Flowers, {tx(60.0f), y}, 1, 0.9f, true},
+    };
+    // A hazy back row: more huts in the far trees.
+    def.skyline = {
+        {K::Tree, {tx(4.0f), y}, 0, 1.4f, false},   {K::House, {tx(26.0f), t1}, house(H::TreeHut), 0.55f, false, 8},
+        {K::Pine, {tx(33.0f), y}, 0, 1.5f, false},  {K::House, {tx(54.0f), t2}, house(H::TreeHut), 0.5f, false, 9},
+        {K::Tree, {tx(58.0f), y}, 1, 1.5f, false},  {K::House, {tx(80.0f), t1}, house(H::TreeHut), 0.55f, false, 10},
+        {K::Pine, {tx(99.0f), y}, 0, 1.4f, false},
     };
     def.npcs = {
         {NpcId::Lila, feetOn(67.5f, g - 7), -1},

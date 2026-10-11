@@ -59,9 +59,31 @@ void docks(MapDef& def)
         {K::Bunting, {tx(88.0f), y - 230.0f}, 1, 1.4f, false},
         {K::Stall, {tx(86.0f), y}, 2, 1.0f, false},
         {K::Lamp, {tx(92.0f), y}, 0, 1.0f, false},
-        {K::Barrel, {tx(96.0f), y}, 0, 1.0f, false},
+        {K::Barrel, {tx(92.8f), y}, 0, 1.0f, false},
         {K::Sign, {tx(104.0f), y}, 2, 1.0f, false},
-        {K::Post, {tx(100.0f), y}, 0, 1.0f, true},
+        {K::Post, {tx(100.0f), y}, 1, 1.0f, true},
+        // A fishing boat at the east mooring, nets and the day's catch.
+        {K::Boat, {tx(97.5f), y + 40.0f}, 1, 0.5f, false},
+        {K::Crate, {tx(94.2f), y}, 1, 0.85f, false},
+        {K::Shell, {tx(6.5f), y}, 0, 1.0f, true},
+        {K::Shell, {tx(90.5f), y}, 1, 1.0f, true},
+        {K::Bench, {tx(27.0f), y}, 0, 1.0f, false},
+        {K::FlowerPot, {tx(46.6f), y}, 1, 0.9f, false},
+        {K::Lantern, {tx(62.5f), y}, 0, 1.0f, false},
+        {K::Bunting, {tx(54.0f), y - 330.0f}, 0, 1.3f, false},
+        {K::Barrel, {tx(81.6f), y}, 1, 0.9f, false},
+        {K::Crate, {tx(81.0f), y - 74.0f}, 1, 0.8f, false},
+        {K::Lantern, {tx(36.0f), (g - 6) * kTile}, 0, 0.8f, false},
+        {K::FlowerPot, {tx(66.0f), (g - 6) * kTile}, 0, 0.9f, false},
+        {K::Banner, {tx(50.0f), (g - 9) * kTile}, 0, 0.8f, false},
+    };
+    // The hazy harbor behind: the Market's roofs, masts and the lighthouse.
+    const float back = y - 40.0f;
+    def.skyline = {
+        {K::Lighthouse, {tx(6.0f), back - 60.0f}, 0, 0.7f, false}, {K::House, {tx(18.0f), back}, house(H::Townhouse), 0.55f, false, 8},
+        {K::House, {tx(30.0f), back}, house(H::Cottage), 0.5f, false, 9},  {K::Boat, {tx(44.0f), back + 30.0f}, 0, 0.6f, false},
+        {K::House, {tx(58.0f), back}, house(H::Inn), 0.55f, false, 10},    {K::House, {tx(72.0f), back}, house(H::Bakery), 0.5f, false, 4},
+        {K::Boat, {tx(84.0f), back + 30.0f}, 1, 0.55f, false},               {K::House, {tx(98.0f), back}, house(H::Townhouse), 0.55f, false, 11},
     };
     def.npcs = {
         {NpcId::Marlo, feetOn(19.0f, g), -1},

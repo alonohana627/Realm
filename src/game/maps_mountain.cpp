@@ -14,7 +14,13 @@ namespace {
 
 using K = DecoKind;
 using S = SpeciesId;
+using H = HouseStyle;
 using gamelib::core::TileSketch;
+
+constexpr int house(const H style)
+{
+    return static_cast<int>(style);
+}
 
 void foothills(MapDef& def)
 {
@@ -66,17 +72,39 @@ void camp(MapDef& def)
     };
     const float y = g * kTile;
     def.decos = {
-        {K::Pine, {tx(7.0f), y}, 1, 1.2f, false},
-        {K::Tent, {tx(15.0f), y}, 0, 1.0f, false},
-        {K::Campfire, {tx(22.0f), y}, 0, 1.0f, false},
-        {K::Bench, {tx(25.5f), y}, 0, 1.0f, false},
-        {K::Tent, {tx(43.0f), y}, 1, 1.1f, false},
+        {K::Pine, {tx(6.0f), y}, 1, 1.2f, false},
+        {K::Sign, {tx(8.5f), y}, 1, 1.0f, false},
+        // The scouts' log cabin and the supply tents round the fire.
+        {K::House, {tx(13.0f), y}, house(H::Cottage), 0.8f, false, 12},
+        {K::Snowpile, {tx(10.5f), y}, 1, 0.9f, true},
+        {K::Tent, {tx(19.5f), y}, 0, 1.0f, false},
+        {K::Campfire, {tx(23.5f), y}, 0, 1.0f, false},
+        {K::Bench, {tx(21.2f), y}, 0, 0.9f, false},
+        {K::Bench, {tx(26.0f), y}, 0, 0.9f, false},
+        {K::Lantern, {tx(28.0f), y}, 0, 1.0f, false},
         {K::Banner, {tx(35.0f), (g - 5) * kTile}, 2, 0.9f, false},
+        {K::Crate, {tx(30.5f), (g - 5) * kTile}, 0, 0.8f, false},
+        {K::Stall, {tx(36.0f), y}, 1, 0.95f, false}, // Tamsin's supplies
+        {K::Tent, {tx(43.0f), y}, 1, 1.1f, false},
+        {K::Anvil, {tx(47.0f), y}, 0, 0.9f, false},
         {K::Crate, {tx(50.0f), y}, 0, 1.0f, false},
+        {K::Crate, {tx(50.4f), y - 74.0f}, 1, 0.8f, false},
         {K::Barrel, {tx(51.2f), y}, 0, 1.0f, false},
-        {K::Lantern, {tx(55.0f), y}, 0, 1.0f, false},
-        {K::Pine, {tx(61.0f), y}, 1, 1.3f, false},
-        {K::Snowpile, {tx(31.0f), y}, 0, 1.0f, true},
+        {K::Tent, {tx(55.5f), y}, 0, 0.9f, false},
+        {K::Lantern, {tx(58.5f), y}, 0, 1.0f, false},
+        {K::Pine, {tx(62.0f), y}, 1, 1.3f, false},
+        {K::Rock, {tx(64.5f), y}, 0, 0.9f, true},
+        {K::Snowpile, {tx(32.0f), y}, 0, 1.0f, true},
+        {K::Snowpile, {tx(53.0f), y}, 1, 0.8f, true},
+        {K::Fence, {tx(39.5f), y}, 0, 0.8f, true},
+    };
+    // A hazy back row of pines and the far tents of the camp.
+    const float back = y - 40.0f;
+    def.skyline = {
+        {K::Pine, {tx(3.0f), back}, 0, 1.0f, false},  {K::Tent, {tx(12.0f), back}, 1, 0.7f, false},
+        {K::Pine, {tx(20.0f), back}, 1, 1.1f, false}, {K::House, {tx(30.0f), back}, house(H::Cottage), 0.5f, false, 3},
+        {K::Pine, {tx(41.0f), back}, 0, 1.0f, false}, {K::Tent, {tx(50.0f), back}, 0, 0.7f, false},
+        {K::Pine, {tx(58.0f), back}, 1, 1.1f, false}, {K::Pine, {tx(67.0f), back}, 0, 1.0f, false},
     };
     def.npcs = {{NpcId::Tamsin, feetOn(30.0f, g), 1}};
 }
