@@ -3,12 +3,20 @@
 # the windows and conversations, the screens, sounds, music and effects.
 add_library(realm_app STATIC
     actions.cpp
+    dialogue_view.cpp
     effects.cpp
+    hud.cpp
     look.cpp
+    profile.cpp
     realm_game.cpp
+    saves.cpp
+    screens.cpp
     shapes.cpp
     sheet.cpp
-    view.cpp)
+    sounds.cpp
+    ui_kit.cpp
+    view.cpp
+    windows.cpp)
 target_include_directories(realm_app PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_link_libraries(realm_app PUBLIC realm_game GameLib::app GameLib::ui GameLib::fx GameLib::ai GameLib::storage)
 gamelib_target_warnings(realm_app)

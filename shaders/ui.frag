@@ -563,7 +563,7 @@ void main()
     } else if (kind == kLogo) {
         // The title's ribbon banner behind the logo text.
         vec2 q = p;
-        float bend = q.y + 0.0016 * q.x * q.x;
+        float bend = q.y + 0.0004 * q.x * q.x - 12.0;
         float ribbon = max(abs(bend) - 26.0, abs(q.x) - 300.0);
         animePart(C, ribbon, animeMaterial(a));
         animeGloss(C, p, ribbon, vec2(-120.0, -10.0), vec2(160.0, 8.0), 0.3);

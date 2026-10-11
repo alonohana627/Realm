@@ -245,7 +245,7 @@ void WorldView::snap(const game::Session& session)
     for (const gamelib::core::TileRun& run : gamelib::core::floorRuns(world)) {
         lowest = std::max(lowest, run.line);
     }
-    bounds.height = std::min(bounds.height, (static_cast<float>(lowest) + 2.6f) * game::kTile);
+    bounds.height = std::min(bounds.height, (static_cast<float>(lowest) + 3.3f) * game::kTile);
     m_camera.setBounds(bounds);
     m_camera.centerOn(session.hero().body.box.bottomCenter() + Vec2{0.0f, -140.0f});
     m_squash.reset();
