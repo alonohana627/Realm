@@ -28,6 +28,7 @@
 #include <gamelib/app/app.hpp>
 #include <gamelib/app/arcade_menus.hpp>
 #include <gamelib/core/dialogue.hpp>
+#include <gamelib/ui/text_field.hpp>
 #include <gamelib/ui/transition.hpp>
 
 #include <array>
@@ -50,6 +51,7 @@ public:
     void onKey(gamelib::app::App& app, const gamelib::platform::KeyEvent& event) override;
     void onGamepad(gamelib::app::App& app, const gamelib::platform::GamepadEvent& event) override;
     void onMouse(gamelib::app::App& app, const gamelib::platform::MouseEvent& event) override;
+    void onText(gamelib::app::App& app, const gamelib::platform::TextEvent& event) override;
     void tick(gamelib::app::App& app) override;
     void frame(gamelib::app::App& app, const gamelib::app::FrameInfo& info) override;
     void draw(gamelib::app::App& app, gamelib::draw::DrawList& list, const gamelib::app::FrameInfo& info) override;
@@ -71,7 +73,9 @@ private:
     struct Creator {
         game::Appearance look;
         int row = 0;        // name, hair, color, eyes, skin, start
-        bool typed = false; // the player typed the name (random names stop)
+        // The name, typed (GameLib's text field); a suggestion stays selected
+        // until the first key replaces it.
+        gamelib::ui::TextField name{10, gamelib::ui::TextFilter::Name, gamelib::ui::TextCase::Capitalized};
         float age = 0.0f;
     };
 

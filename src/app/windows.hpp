@@ -22,6 +22,7 @@
 #include <gamelib/platform/actions.hpp>
 #include <gamelib/platform/input.hpp>
 #include <gamelib/ui/item_grid.hpp>
+#include <gamelib/ui/key_palette.hpp>
 #include <gamelib/ui/list_view.hpp>
 #include <gamelib/ui/menu.hpp>
 #include <gamelib/ui/stat_window.hpp>
@@ -42,7 +43,7 @@ class Windows {
 public:
     Windows();
 
-    void open(WindowId id, const game::Session& session);
+    void open(WindowId id, const game::Session& session, const gamelib::platform::ActionMap& actions);
     void close() { m_switch.close(); }
     [[nodiscard]] std::optional<WindowId> current() const { return m_switch.current(); }
     [[nodiscard]] bool isOpen() const { return m_switch.isOpen(); }
@@ -92,11 +93,11 @@ private:
         bool usable = true;
     };
     [[nodiscard]] std::vector<PaletteEntry> palette(const game::Session& session, const gamelib::platform::ActionMap& actions) const;
-    [[nodiscard]] std::vector<gamelib::core::Rect> capRects(gamelib::core::Rect keyboard) const;
     [[nodiscard]] gamelib::core::Rect keyboardRect() const;
     [[nodiscard]] gamelib::core::Rect paletteRect() const;
-    [[nodiscard]] std::vector<gamelib::core::Rect> paletteRects(std::size_t count) const;
-    WindowFeedback placeOnKey(gamelib::platform::Key key, game::Session& session, gamelib::platform::ActionMap& actions);
+    [[nodiscard]] static gamelib::ui::KeyPaletteStyle keyGeometry();
+    void refreshPalette(const game::Session& session, const gamelib::platform::ActionMap& actions);
+    WindowFeedback keysResult(const gamelib::ui::KeyPaletteResult& result, const gamelib::platform::ActionMap& actions);
 
     gamelib::ui::WindowSwitch<WindowId> m_switch;
     gamelib::ui::StatWindow m_stats{game::kCoreCount};
@@ -111,14 +112,8 @@ private:
     gamelib::ui::ListView m_shopList{7, true};
     int m_quantity = 1;
     int m_mapCursor = 0;
-    // The keybinding window.
-    bool m_keysOnPalette = true;
-    int m_capCursor = 0;
-    int m_paletteCursor = 0;
-    int m_paletteFirst = 0;
-    gamelib::platform::ActionId m_held = gamelib::platform::kNoAction;
-    bool m_dragging = false;
-    gamelib::core::Vec2 m_mouse;
+    // The keybinding window: GameLib's KeyPalette, six entries by three rows.
+    gamelib::ui::KeyPalette m_keys{6, 3};
     std::string m_message;
     float m_messageAge = 0.0f;
     float m_age = 0.0f;

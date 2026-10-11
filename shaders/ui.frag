@@ -518,19 +518,8 @@ void main()
             C.color = over(vec4(a, animeCover(C, d) * s.color.a), C.color);
             C.color = over(vec4(b, animeUiLine(C, abs(d + 1.5), 2.0)), C.color);
         } else {
-            // The cooldown sweep: a veil over the part of the slot still
-            // cooling down, clockwise from the top, with a bright edge.
-            float remaining = clamp(s.params.y, 0.0, 1.0);
-            float d = sdRoundBox(local, halfSize, s.params.w > 0.0 ? s.params.w : 10.0);
-            float ang = atan(local.x, -local.y); // 0 at the top, clockwise
-            float f = fract(ang / 6.2832 + 1.0);
-            float veil = step(1.0 - remaining, f) * animeCover(C, d);
-            C.color = over(vec4(vec3(0.05, 0.04, 0.12), veil * 0.62), C.color);
-            float edgeA = (1.0 - remaining) * 6.2832;
-            vec2 dir = vec2(sin(edgeA), -cos(edgeA));
-            float line = abs(dot(local, vec2(-dir.y, dir.x))) - 1.2;
-            float onRay = step(0.0, dot(local, dir));
-            C.color = over(vec4(b * 1.4, animeCover(C, line) * onRay * animeCover(C, d) * step(0.001, remaining) * 0.9), C.color);
+            // The cooldown sweep (GameLib's): clockwise from the top, a bright edge.
+            animeUiSweep(C, local, halfSize, s.params.w > 0.0 ? s.params.w : 10.0, s.params.y, b * 1.4);
         }
         outColor = animeFinish(C);
         outColor.a *= s.color.a;

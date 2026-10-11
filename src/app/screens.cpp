@@ -12,6 +12,7 @@
 #include <gamelib/core/timers.hpp>
 #include <gamelib/draw/parallax.hpp>
 #include <gamelib/ui/menu.hpp>
+#include <gamelib/ui/text_field.hpp>
 
 #include <algorithm>
 #include <array>
@@ -272,11 +273,18 @@ void RealmGame::drawCreate(gamelib::draw::DrawList& list, const float time) cons
         }
         switch (row) {
         case 0: {
-            std::string name = c.look.name;
-            if (selected && std::fmod(time, 1.0f) < 0.55f) {
-                name += "_";
-            }
-            kit::label(list, name, vx, r.center().y, 34.0f, ui_color::kInk, Align::Center, 1.7f);
+            // GameLib's text field in a soft well: the caret blinks while the row
+            // is chosen, a suggestion shows selected until a key replaces it.
+            const Rect box{vx - 170.0f, r.center().y - 30.0f, 340.0f, 60.0f};
+            kit::well(list, m_shapes, box);
+            gamelib::ui::TextFieldStyle style;
+            style.font = kit::font(34.0f, 1.7f);
+            style.fill = srgb(0x000000, 0.0f);
+            style.borderWidth = 0.0f;
+            style.text = ui_color::kInk;
+            style.selection = srgb(0xFFD88A, 0.85f);
+            style.caret = selected ? srgb(0xD08A1E) : srgb(0xD08A1E, 0.0f);
+            gamelib::ui::drawTextField(list, c.name, box, style, time);
             break;
         }
         case 1: kit::label(list, kHairNames[static_cast<std::size_t>(c.look.hair)], vx, r.center().y, 29.0f, ui_color::kInk, Align::Center, 1.5f); break;

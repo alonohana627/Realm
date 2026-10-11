@@ -6,7 +6,7 @@
 #include <gamelib/core/easing.hpp>
 #include <gamelib/core/grid_layout.hpp>
 #include <gamelib/draw/font.hpp>
-#include <gamelib/ui/key_binding_screen.hpp>
+#include <gamelib/ui/keyboard.hpp>
 #include <gamelib/ui/world_map.hpp>
 
 #include <algorithm>
@@ -36,22 +36,15 @@ struct QuickKey {
 
 std::vector<QuickKey> quickKeys(const gamelib::platform::ActionMap& actions, const game::Character& c)
 {
+    // Every key holding a learned skill or an item, in keyboard order.
+    const auto shows = [&](const gamelib::platform::ActionId id) {
+        const std::optional<game::SkillId> skill = actionSkill(actions, id);
+        return skill ? c.skillLevel(*skill) > 0 : actionItem(actions, id) != 0;
+    };
     std::vector<QuickKey> keys;
-    for (const gamelib::ui::KeyCap& cap : gamelib::ui::keyboardLayout()) {
-        const gamelib::platform::ActionId id = actions.actionOn(cap.key);
-        if (id == gamelib::platform::kNoAction) {
-            continue;
-        }
-        if (const std::optional<game::SkillId> skill = actionSkill(actions, id)) {
-            if (c.skillLevel(*skill) > 0) {
-                keys.push_back({.key = cap.key, .skill = skill});
-            }
-        } else if (const int item = actionItem(actions, id); item != 0) {
-            keys.push_back({.key = cap.key, .item = item});
-        }
-        if (keys.size() >= 14) {
-            break;
-        }
+    for (const gamelib::platform::Key key : gamelib::ui::hotbarKeys(actions, shows, 14)) {
+        const gamelib::platform::ActionId id = actions.actionOn(key);
+        keys.push_back({.key = key, .skill = actionSkill(actions, id), .item = actionItem(actions, id)});
     }
     return keys;
 }

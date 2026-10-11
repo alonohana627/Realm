@@ -8,7 +8,8 @@
 #include <gamelib/core/easing.hpp>
 #include <gamelib/draw/font.hpp>
 #include <gamelib/ui/focus.hpp>
-#include <gamelib/ui/key_binding_screen.hpp>
+#include <gamelib/ui/key_palette.hpp>
+#include <gamelib/ui/keyboard.hpp>
 
 #include <algorithm>
 #include <array>
@@ -31,8 +32,6 @@ using gamelib::platform::Key;
 
 constexpr float kW = 1920.0f;
 constexpr int kBagColumns = 6;
-constexpr int kPaletteColumns = 6;
-constexpr int kPaletteRows = 3;
 
 Rect lifted(const Rect& r, const float amount)
 {
@@ -168,7 +167,7 @@ Rect Windows::windowRect(const WindowId id) const
     return {};
 }
 
-void Windows::open(const WindowId id, const game::Session& session)
+void Windows::open(const WindowId id, const game::Session& session, const gamelib::platform::ActionMap& actions)
 {
     m_switch.open(id);
     m_age = 0.0f;
@@ -186,10 +185,8 @@ void Windows::open(const WindowId id, const game::Session& session)
         m_shopList.select(0);
         m_quantity = 1;
     } else if (id == WindowId::Keys) {
-        m_keysOnPalette = true;
-        m_held = gamelib::platform::kNoAction;
-        m_paletteCursor = 0;
-        m_paletteFirst = 0;
+        m_keys.reset();
+        refreshPalette(session, actions);
     } else if (id == WindowId::WorldMap) {
         m_mapCursor = static_cast<int>(session.mapId());
     }
@@ -238,7 +235,7 @@ WindowFeedback Windows::handle(const MenuInput input, game::Session& session, ga
     if (!id) {
         return WindowFeedback::None;
     }
-    if (input == MenuInput::Back && !(*id == WindowId::Keys && m_held != gamelib::platform::kNoAction)) {
+    if (input == MenuInput::Back && *id != WindowId::Keys) {
         m_switch.close();
         return WindowFeedback::Closed;
     }
@@ -394,112 +391,11 @@ WindowFeedback Windows::handle(const MenuInput input, game::Session& session, ga
         }
         return e == gamelib::ui::ListEvent::Moved ? WindowFeedback::Moved : WindowFeedback::None;
     }
-    case WindowId::Keys: {
-        const std::vector<PaletteEntry> entries = palette(session, actions);
-        if (input == MenuInput::Back) {
-            m_held = gamelib::platform::kNoAction;
-            m_message.clear();
-            return WindowFeedback::Moved;
-        }
-        if (m_keysOnPalette) {
-            if (input == MenuInput::Confirm) {
-                if (m_paletteCursor < static_cast<int>(entries.size())) {
-                    m_held = entries[static_cast<std::size_t>(m_paletteCursor)].action;
-                    m_keysOnPalette = false;
-                    m_message = "press a key, or choose a key and press enter";
-                    m_messageAge = 0.0f;
-                    return WindowFeedback::Done;
-                }
-                return WindowFeedback::None;
-            }
-            const int count = static_cast<int>(entries.size());
-            if (count == 0) {
-                return WindowFeedback::None;
-            }
-            int next = m_paletteCursor;
-            if (input == MenuInput::Left) {
-                next = std::max(0, next - 1);
-            } else if (input == MenuInput::Right) {
-                next = std::min(count - 1, next + 1);
-            } else if (input == MenuInput::Up) {
-                if (next < kPaletteColumns) {
-                    m_keysOnPalette = false; // up from the top row reaches the keyboard
-                    return WindowFeedback::Moved;
-                }
-                next -= kPaletteColumns;
-            } else if (input == MenuInput::Down) {
-                next = std::min(count - 1, next + kPaletteColumns);
-            }
-            m_paletteCursor = next;
-            // Scroll so the cursor's row shows.
-            const int row = next / kPaletteColumns;
-            const int firstRow = m_paletteFirst / kPaletteColumns;
-            if (row < firstRow) {
-                m_paletteFirst = row * kPaletteColumns;
-            } else if (row >= firstRow + kPaletteRows) {
-                m_paletteFirst = (row - kPaletteRows + 1) * kPaletteColumns;
-            }
-            return WindowFeedback::Moved;
-        }
-        const std::vector<Rect> caps = capRects(keyboardRect());
-        if (input == MenuInput::Confirm) {
-            const Key key = gamelib::ui::keyboardLayout()[static_cast<std::size_t>(m_capCursor)].key;
-            if (m_held != gamelib::platform::kNoAction) {
-                return placeOnKey(key, session, actions);
-            }
-            const ActionId on = actions.actionOn(key);
-            if (on != gamelib::platform::kNoAction && !actions.isLocked(on)) {
-                m_held = on;
-                (void)actions.clear(key);
-                m_message = std::format("moving {} - choose its new key", lower(actions.info(on).label));
-                m_messageAge = 0.0f;
-                return WindowFeedback::Unbound;
-            }
-            return WindowFeedback::Failed;
-        }
-        const int dx = input == MenuInput::Left ? -1 : input == MenuInput::Right ? 1 : 0;
-        const int dy = input == MenuInput::Up ? -1 : input == MenuInput::Down ? 1 : 0;
-        const int next = gamelib::ui::stepFocus(caps, m_capCursor, dx, dy, false);
-        if (next == m_capCursor && dy > 0) {
-            m_keysOnPalette = true;
-            return WindowFeedback::Moved;
-        }
-        m_capCursor = next;
-        return WindowFeedback::Moved;
-    }
+    case WindowId::Keys:
+        refreshPalette(session, actions);
+        return keysResult(m_keys.handle(input, actions), actions);
     }
     return WindowFeedback::None;
-}
-
-WindowFeedback Windows::placeOnKey(const Key key, game::Session& session, gamelib::platform::ActionMap& actions)
-{
-    (void)session;
-    if (m_held == gamelib::platform::kNoAction) {
-        return WindowFeedback::None;
-    }
-    const ActionId on = actions.actionOn(key);
-    if (on != gamelib::platform::kNoAction && actions.isLocked(on)) {
-        m_message = "that key is locked";
-        m_messageAge = 0.0f;
-        return WindowFeedback::Failed;
-    }
-    const gamelib::platform::ActionMap::BindResult r = actions.bind(key, m_held, gamelib::platform::ActionMap::Conflict::Replace);
-    if (!r.bound) {
-        return WindowFeedback::Failed;
-    }
-    m_message = std::format("{} is on {}", lower(actions.info(m_held).label), lower(gamelib::platform::keyLabel(key)));
-    if (r.displaced != gamelib::platform::kNoAction && actions.keysOf(r.displaced).empty()) {
-        m_message += std::format(" - {} has no key now", lower(actions.info(r.displaced).label));
-    }
-    m_messageAge = 0.0f;
-    m_held = gamelib::platform::kNoAction;
-    const auto& layout = gamelib::ui::keyboardLayout();
-    for (std::size_t i = 0; i < layout.size(); ++i) {
-        if (layout[i].key == key) {
-            m_capCursor = static_cast<int>(i);
-        }
-    }
-    return WindowFeedback::Bound;
 }
 
 WindowFeedback Windows::handleKey(const Key key, game::Session& session, gamelib::platform::ActionMap& actions)
@@ -507,6 +403,12 @@ WindowFeedback Windows::handleKey(const Key key, game::Session& session, gamelib
     const std::optional<WindowId> id = m_switch.current();
     if (!id) {
         return WindowFeedback::None;
+    }
+    if (*id == WindowId::Keys) {
+        // Every key goes to the palette: arrows, Enter, Escape, Tab and Delete
+        // drive it, any other key takes what is in hand.
+        refreshPalette(session, actions);
+        return keysResult(m_keys.handleKey(key, actions), actions);
     }
     if (key == Key::Tab) {
         if (*id == WindowId::Inventory) {
@@ -518,32 +420,6 @@ WindowFeedback Windows::handleKey(const Key key, game::Session& session, gamelib
             m_skillList.setCount(static_cast<int>(skillRows(session).size()));
             m_skillList.select(0);
             return WindowFeedback::Tab;
-        }
-        if (*id == WindowId::Keys) {
-            m_keysOnPalette = !m_keysOnPalette;
-            return WindowFeedback::Moved;
-        }
-        return WindowFeedback::None;
-    }
-    if (*id == WindowId::Keys) {
-        if (key == Key::Delete || key == Key::Backspace) {
-            if (m_keysOnPalette) {
-                return WindowFeedback::None;
-            }
-            const Key cap = gamelib::ui::keyboardLayout()[static_cast<std::size_t>(m_capCursor)].key;
-            return actions.clear(cap) ? WindowFeedback::Unbound : WindowFeedback::Failed;
-        }
-        if (m_held != gamelib::platform::kNoAction && hotkeyCandidate(key) && key != Key::Escape) {
-            return placeOnKey(key, session, actions);
-        }
-        // Otherwise the key shows where it is on the keyboard.
-        const auto& layout = gamelib::ui::keyboardLayout();
-        for (std::size_t i = 0; i < layout.size(); ++i) {
-            if (layout[i].key == key && hotkeyCandidate(key)) {
-                m_capCursor = static_cast<int>(i);
-                m_keysOnPalette = false;
-                return WindowFeedback::Moved;
-            }
         }
         return WindowFeedback::None;
     }
@@ -594,7 +470,6 @@ WindowFeedback Windows::handleMouse(const gamelib::platform::MouseEvent& event, 
     if (!id) {
         return WindowFeedback::None;
     }
-    m_mouse = event.position;
     if (*id != WindowId::Keys) {
         // Clicks select and use slots in the bag and the gear.
         if (event.kind == Kind::Button && event.pressed && event.button == MouseButton::Left) {
@@ -618,74 +493,11 @@ WindowFeedback Windows::handleMouse(const gamelib::platform::MouseEvent& event, 
         }
         return WindowFeedback::None;
     }
-    // The keybinding window: drag and drop between the palette and the keys.
-    const std::vector<PaletteEntry> entries = palette(session, actions);
-    const std::vector<Rect> pal = paletteRects(entries.size());
-    const std::vector<Rect> caps = capRects(keyboardRect());
-    const auto capAt = [&](const Vec2 at) -> int {
-        for (std::size_t i = 0; i < caps.size(); ++i) {
-            if (caps[i].contains(at)) {
-                return static_cast<int>(i);
-            }
-        }
-        return -1;
-    };
-    if (event.kind == Kind::Wheel) {
-        const int columns = kPaletteColumns;
-        m_paletteFirst = std::clamp(m_paletteFirst - static_cast<int>(event.wheel) * columns, 0,
-                                    std::max(0, (static_cast<int>(entries.size()) + columns - 1) / columns - kPaletteRows) * columns);
-        return WindowFeedback::None;
-    }
-    if (event.kind == Kind::Button && event.button == MouseButton::Right && event.pressed) {
-        const int cap = capAt(event.position);
-        if (cap >= 0) {
-            m_capCursor = cap;
-            return actions.clear(gamelib::ui::keyboardLayout()[static_cast<std::size_t>(cap)].key) ? WindowFeedback::Unbound
-                                                                                                 : WindowFeedback::Failed;
-        }
-        return WindowFeedback::None;
-    }
-    if (event.kind == Kind::Button && event.button == MouseButton::Left) {
-        if (event.pressed) {
-            for (std::size_t i = 0; i < pal.size(); ++i) {
-                const int index = m_paletteFirst + static_cast<int>(i);
-                if (pal[i].contains(event.position) && index < static_cast<int>(entries.size())) {
-                    m_paletteCursor = index;
-                    m_keysOnPalette = true;
-                    m_held = entries[static_cast<std::size_t>(index)].action;
-                    m_dragging = true;
-                    return WindowFeedback::Done;
-                }
-            }
-            const int cap = capAt(event.position);
-            if (cap >= 0) {
-                m_capCursor = cap;
-                m_keysOnPalette = false;
-                const Key key = gamelib::ui::keyboardLayout()[static_cast<std::size_t>(cap)].key;
-                const ActionId on = actions.actionOn(key);
-                if (on != gamelib::platform::kNoAction && !actions.isLocked(on)) {
-                    m_held = on;
-                    (void)actions.clear(key);
-                    m_dragging = true;
-                    return WindowFeedback::Unbound;
-                }
-            }
-            return WindowFeedback::None;
-        }
-        // Released: drop what is held.
-        if (m_dragging) {
-            m_dragging = false;
-            const int cap = capAt(event.position);
-            if (cap >= 0) {
-                m_capCursor = cap;
-                return placeOnKey(gamelib::ui::keyboardLayout()[static_cast<std::size_t>(cap)].key, session, actions);
-            }
-            // Dropped off the keyboard: the action keeps no key from the drag.
-            m_held = gamelib::platform::kNoAction;
-            return WindowFeedback::Unbound;
-        }
-    }
-    return WindowFeedback::None;
+    // The keybinding window: GameLib's KeyPalette (drag and drop, the wheel).
+    refreshPalette(session, actions);
+    const gamelib::ui::KeyPalette::Layout layout = m_keys.layout(keyboardRect(), paletteRect(), keyGeometry());
+    const gamelib::ui::KeyPaletteResult r = m_keys.handleMouse(event, layout, actions);
+    return r.event == gamelib::ui::KeyPaletteEvent::Cursor ? WindowFeedback::None : keysResult(r, actions);
 }
 
 // ---------------------------------------------------------------------------
@@ -699,16 +511,6 @@ Rect Windows::keyboardRect() const
     return {w.center().x - width * 0.5f, w.y + 90.0f, width, gamelib::ui::kKeyboardUnitsHigh * kUnit};
 }
 
-std::vector<Rect> Windows::capRects(const Rect keyboard) const
-{
-    std::vector<Rect> rects;
-    const float unit = keyboard.width / gamelib::ui::kKeyboardUnitsWide;
-    for (const gamelib::ui::KeyCap& cap : gamelib::ui::keyboardLayout()) {
-        rects.push_back({keyboard.x + cap.x * unit + 3.0f, keyboard.y + cap.y * unit + 3.0f, cap.width * unit - 6.0f, unit - 6.0f});
-    }
-    return rects;
-}
-
 Rect Windows::paletteRect() const
 {
     const Rect w = windowRect(WindowId::Keys);
@@ -716,19 +518,12 @@ Rect Windows::paletteRect() const
     return {w.x + 40.0f, k.bottom() + 70.0f, w.width - 80.0f, w.bottom() - k.bottom() - 120.0f};
 }
 
-std::vector<Rect> Windows::paletteRects(const std::size_t count) const
+gamelib::ui::KeyPaletteStyle Windows::keyGeometry()
 {
-    const Rect area = paletteRect();
-    const float cw = (area.width - 20.0f * (kPaletteColumns - 1)) / kPaletteColumns;
-    const float ch = (area.height - 14.0f * (kPaletteRows - 1)) / kPaletteRows;
-    std::vector<Rect> rects;
-    for (int i = 0; i < kPaletteColumns * kPaletteRows; ++i) {
-        if (m_paletteFirst + i >= static_cast<int>(count)) {
-            break;
-        }
-        rects.push_back({area.x + static_cast<float>(i % kPaletteColumns) * (cw + 20.0f), area.y + static_cast<float>(i / kPaletteColumns) * (ch + 14.0f), cw, ch});
-    }
-    return rects;
+    gamelib::ui::KeyPaletteStyle s;
+    s.keyGap = 6.0f;
+    s.entryGap = {20.0f, 14.0f};
+    return s;
 }
 
 std::vector<Windows::PaletteEntry> Windows::palette(const game::Session& session, const gamelib::platform::ActionMap& actions) const
@@ -756,6 +551,47 @@ std::vector<Windows::PaletteEntry> Windows::palette(const game::Session& session
         entries.push_back({.action = id, .label = lower(actions.info(id).label)});
     }
     return entries;
+}
+
+void Windows::refreshPalette(const game::Session& session, const gamelib::platform::ActionMap& actions)
+{
+    std::vector<gamelib::ui::KeyPaletteEntry> list;
+    for (const PaletteEntry& e : palette(session, actions)) {
+        list.push_back({.action = e.action, .label = e.label});
+    }
+    m_keys.setEntries(std::move(list));
+}
+
+WindowFeedback Windows::keysResult(const gamelib::ui::KeyPaletteResult& r, const gamelib::platform::ActionMap& actions)
+{
+    using gamelib::ui::KeyPaletteEvent;
+    const auto name = [&](const ActionId a) { return lower(actions.info(a).label); };
+    switch (r.event) {
+    case KeyPaletteEvent::Cursor:
+    case KeyPaletteEvent::Dropped: return WindowFeedback::Moved;
+    case KeyPaletteEvent::Picked:
+        m_message = std::format("{} in hand - press its new key, or choose a key and press enter", name(r.action));
+        m_messageAge = 0.0f;
+        return WindowFeedback::Done;
+    case KeyPaletteEvent::Bound:
+    case KeyPaletteEvent::Moved:
+        m_message = std::format("{} is on {}", name(r.action), lower(gamelib::platform::keyLabel(r.key)));
+        if (r.displacedUnbound) {
+            m_message += std::format(" - {} has no key now", name(r.displaced));
+        }
+        m_messageAge = 0.0f;
+        return WindowFeedback::Bound;
+    case KeyPaletteEvent::Unbound: return WindowFeedback::Unbound;
+    case KeyPaletteEvent::Refused:
+        m_message = "that key is locked";
+        m_messageAge = 0.0f;
+        return WindowFeedback::Failed;
+    case KeyPaletteEvent::Back:
+        m_switch.close();
+        return WindowFeedback::Closed;
+    case KeyPaletteEvent::None: break;
+    }
+    return WindowFeedback::None;
 }
 
 // ---------------------------------------------------------------------------
@@ -1251,16 +1087,17 @@ void Windows::drawWorldMap(gamelib::draw::DrawList& list, const Shapes& shapes, 
 void Windows::drawKeys(gamelib::draw::DrawList& list, const Shapes& shapes, const game::Session& session,
                        const gamelib::platform::ActionMap& actions, const Rect rect, const float time) const
 {
-    const Rect inner = kit::window(list, shapes, rect, "key bindings");
-    (void)inner;
+    (void)kit::window(list, shapes, rect, "key bindings");
     const Rect keyboard = keyboardRect();
-    const std::vector<Rect> caps = capRects(keyboard);
     addUi(list, shapes, Ui::Well, keyboard.expanded(14.0f + kit::kMargin), srgb(0xE8DCC6), ui_color::kTitle, 0.0f, 0.0f, 18.0f);
-    const auto& layout = gamelib::ui::keyboardLayout();
-    for (std::size_t i = 0; i < layout.size(); ++i) {
-        const Rect r = caps[i];
-        const Key key = layout[i].key;
-        const ActionId a = actions.actionOn(key);
+    const std::vector<PaletteEntry> entries = palette(session, actions);
+    const gamelib::ui::KeyPalette::Layout layout = m_keys.layout(keyboard, paletteRect(), keyGeometry());
+    const game::Character& c = session.character();
+    // GameLib's KeyPalette lays out and runs the keyboard and the palette;
+    // Realm paints the caps, the entries and what is in hand its own way.
+    gamelib::ui::KeyPaletteStyle style = keyGeometry();
+    style.capPainter = [&](gamelib::draw::DrawList& l, const gamelib::ui::KeyCapView& cap) {
+        const ActionId a = cap.lifted ? gamelib::platform::kNoAction : cap.action;
         Color face = srgb(0xF6F0E6);
         std::optional<game::SkillId> skill;
         int item = 0;
@@ -1271,74 +1108,62 @@ void Windows::drawKeys(gamelib::draw::DrawList& list, const Shapes& shapes, cons
             face = skill ? srgb(0xD8E8FF) : item != 0 ? srgb(0xFFE0E4) : cat == "MENUS" ? srgb(0xE6DCF8) : cat == "SYSTEM" ? srgb(0xD8D4CC)
                                                                                                                             : srgb(0xFFF0C8);
         }
-        const bool focused = !m_keysOnPalette && static_cast<int>(i) == m_capCursor;
-        addUi(list, shapes, Ui::KeyCap, r.expanded(kit::kMargin), face, srgb(0xFFFFFF));
-        if (focused) {
-            addUi(list, shapes, Ui::Slot, r.expanded(kit::kMargin + 2.0f), srgb(0x000000, 0.0f), ui_color::kGold, 0.0f,
+        const Rect r = cap.rect;
+        addUi(l, shapes, Ui::KeyCap, r.expanded(kit::kMargin), face, srgb(0xFFFFFF));
+        if (cap.focused) {
+            addUi(l, shapes, Ui::Slot, r.expanded(kit::kMargin + 2.0f), srgb(0x000000, 0.0f), ui_color::kGold, 0.0f,
                   0.75f + 0.25f * std::sin(time * 6.0f), 10.0f);
         }
-        const Font kf = kit::font(16.0f, 1.3f);
-        gamelib::draw::drawText(list, kf, gamelib::platform::keyLabel(key), r.x + 7.0f, r.y + 5.0f, ui_color::kSoftInk);
-        if (skill && session.character().skillLevel(*skill) > 0) {
-            kit::skillIconAt(list, shapes, {r.center().x, r.center().y + 6.0f}, std::min(r.height, r.width) * 0.62f, *skill);
+        gamelib::draw::drawText(l, kit::font(16.0f, 1.3f), gamelib::platform::keyLabel(cap.key), r.x + 7.0f, r.y + 5.0f, ui_color::kSoftInk);
+        if (skill) {
+            // A learned skill's icon; one not learned yet, faded.
+            kit::skillIconAt(l, shapes, {r.center().x, r.center().y + 6.0f}, std::min(r.height, r.width) * 0.62f, *skill,
+                             c.skillLevel(*skill) > 0 ? 1.0f : 0.35f);
         } else if (item != 0) {
-            kit::slotIcon(list, shapes, Rect{r.center().x - 22.0f, r.center().y - 16.0f, 44.0f, 44.0f}, item, 0,
-                          session.character().countOf(item) > 0 ? 1.0f : 0.4f);
-        } else if (skill) {
-            // A skill not learned yet: its icon, faded.
-            kit::skillIconAt(list, shapes, {r.center().x, r.center().y + 6.0f}, std::min(r.height, r.width) * 0.62f, *skill, 0.35f);
+            kit::slotIcon(l, shapes, Rect{r.center().x - 22.0f, r.center().y - 16.0f, 44.0f, 44.0f}, item, 0, c.countOf(item) > 0 ? 1.0f : 0.4f);
         } else if (a != gamelib::platform::kNoAction) {
-            fitLabel(list, lower(actions.info(a).label), {r.x + 4.0f, r.y + 22.0f, r.width - 8.0f, r.height - 24.0f}, 19.0f, 12.0f,
-                     ui_color::kInk);
+            fitLabel(l, lower(actions.info(a).label), {r.x + 4.0f, r.y + 22.0f, r.width - 8.0f, r.height - 24.0f}, 19.0f, 12.0f, ui_color::kInk);
         }
-    }
-    // The palette.
-    const std::vector<PaletteEntry> entries = palette(session, actions);
+    };
+    style.entryPainter = [&](gamelib::draw::DrawList& l, const gamelib::ui::KeyEntryView& view) {
+        const PaletteEntry& e = entries[view.index];
+        const Rect r = view.rect;
+        addUi(l, shapes, Ui::Button, r.expanded(kit::kMargin - 2.0f), view.held ? srgb(0xD8F0D0) : srgb(0xFFF4DE), ui_color::kGold,
+              view.selected ? 1.0f : 0.0f);
+        if (e.skill) {
+            kit::skillIconAt(l, shapes, {r.x + 34.0f, r.center().y}, 46.0f, *e.skill);
+        } else if (e.item != 0) {
+            kit::slotIcon(l, shapes, Rect{r.x + 12.0f, r.center().y - 22.0f, 44.0f, 44.0f}, e.item, 0, e.usable ? 1.0f : 0.4f);
+        } else {
+            // An action: a small key cap in its category's color (as on the keyboard).
+            const Color tint = actions.info(e.action).category == "MENUS" ? srgb(0xE6DCF8) : srgb(0xFFF0C8);
+            addUi(l, shapes, Ui::KeyCap, Rect{r.x + 14.0f, r.center().y - 18.0f, 40.0f, 36.0f}.expanded(kit::kMargin), tint, srgb(0xFFFFFF));
+        }
+        kit::label(l, e.label, r.x + 66.0f, r.center().y - 8.0f, 20.0f, ui_color::kInk, Align::Left, view.selected ? 1.5f : 1.3f);
+        const bool none = view.key == Key::Unknown;
+        kit::label(l, none ? std::string{"no key"} : "on " + lower(gamelib::platform::keyLabel(view.key)), r.x + 66.0f, r.center().y + 16.0f,
+                   16.0f, none ? srgb(0xD8404E) : ui_color::kSoftInk);
+    };
+    style.heldPainter = [&](gamelib::draw::DrawList& l, const ActionId held, const Vec2 at) {
+        if (const std::optional<game::SkillId> s = actionSkill(actions, held)) {
+            kit::skillIconAt(l, shapes, at, 56.0f, *s);
+        } else if (const int item = actionItem(actions, held); item != 0) {
+            kit::slotIcon(l, shapes, Rect{at.x - 28.0f, at.y - 28.0f, 56.0f, 56.0f}, item, 0);
+        } else {
+            kit::keyCap(l, shapes, at, lower(actions.info(held).label), 34.0f);
+        }
+    };
+    gamelib::ui::drawKeyPalette(list, m_keys, layout, actions, style);
+    // The palette's heading and where it is scrolled to.
     const Rect pal = paletteRect();
     kit::label(list, "pick a skill, item or action, then press its new key - or drag it onto a key", pal.x, pal.y - 34.0f, 21.0f,
                ui_color::kSoftInk);
-    const std::vector<Rect> rects = paletteRects(entries.size());
-    const int rows = (static_cast<int>(entries.size()) + kPaletteColumns - 1) / kPaletteColumns;
-    if (rows > kPaletteRows) {
-        const int firstRow = m_paletteFirst / kPaletteColumns;
-        const std::string more = std::format("rows {}-{} of {}{}{}", firstRow + 1, std::min(rows, firstRow + kPaletteRows), rows,
-                                             firstRow > 0 ? "   ^ more above" : "", firstRow + kPaletteRows < rows ? "   v more below" : "");
+    const int rows = m_keys.rowCount();
+    if (rows > m_keys.rows()) {
+        const int firstRow = m_keys.firstRow();
+        const std::string more = std::format("rows {}-{} of {}{}{}", firstRow + 1, std::min(rows, firstRow + m_keys.rows()), rows,
+                                             firstRow > 0 ? "   ^ more above" : "", firstRow + m_keys.rows() < rows ? "   v more below" : "");
         kit::label(list, more, pal.right(), pal.y - 34.0f, 20.0f, srgb(0xD08A1E), Align::Right, 1.4f);
-    }
-    for (std::size_t i = 0; i < rects.size(); ++i) {
-        const int index = m_paletteFirst + static_cast<int>(i);
-        const PaletteEntry& e = entries[static_cast<std::size_t>(index)];
-        const Rect r = rects[i];
-        const bool selected = m_keysOnPalette && index == m_paletteCursor;
-        const bool held = e.action == m_held;
-        addUi(list, shapes, Ui::Button, r.expanded(kit::kMargin - 2.0f), held ? srgb(0xD8F0D0) : srgb(0xFFF4DE), ui_color::kGold,
-              selected ? 1.0f : 0.0f);
-        if (e.skill) {
-            kit::skillIconAt(list, shapes, {r.x + 34.0f, r.center().y}, 46.0f, *e.skill);
-        } else if (e.item != 0) {
-            kit::slotIcon(list, shapes, Rect{r.x + 12.0f, r.center().y - 22.0f, 44.0f, 44.0f}, e.item, 0, e.usable ? 1.0f : 0.4f);
-        } else {
-            // An action: a small key cap in its category's color (as on the keyboard).
-            const std::string& cat = actions.info(e.action).category;
-            const Color tint = cat == "MENUS" ? srgb(0xE6DCF8) : srgb(0xFFF0C8);
-            addUi(list, shapes, Ui::KeyCap, Rect{r.x + 14.0f, r.center().y - 18.0f, 40.0f, 36.0f}.expanded(kit::kMargin), tint, srgb(0xFFFFFF));
-        }
-        kit::label(list, e.label, r.x + 66.0f, r.center().y - 8.0f, 20.0f, ui_color::kInk, Align::Left, selected ? 1.5f : 1.3f);
-        const std::vector<Key> keys = actions.keysOf(e.action);
-        kit::label(list, keys.empty() ? std::string{"no key"} : "on " + lower(gamelib::platform::keyLabel(keys.front())), r.x + 66.0f,
-                   r.center().y + 16.0f, 16.0f, keys.empty() ? srgb(0xD8404E) : ui_color::kSoftInk);
-    }
-    // What is held follows the mouse while dragging.
-    if (m_held != gamelib::platform::kNoAction && m_dragging) {
-        const std::optional<game::SkillId> s = actionSkill(actions, m_held);
-        const int item = actionItem(actions, m_held);
-        if (s) {
-            kit::skillIconAt(list, shapes, m_mouse, 56.0f, *s);
-        } else if (item != 0) {
-            kit::slotIcon(list, shapes, Rect{m_mouse.x - 28.0f, m_mouse.y - 28.0f, 56.0f, 56.0f}, item, 0);
-        } else {
-            kit::keyCap(list, shapes, m_mouse, lower(actions.info(m_held).label), 34.0f);
-        }
     }
     const std::string hint = !m_message.empty() && m_messageAge < 4.0f ? m_message
                                                                        : "arrows move   enter: pick or place   del: clear a key   tab: keyboard / palette   esc: close";

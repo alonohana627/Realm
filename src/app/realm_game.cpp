@@ -34,7 +34,6 @@ constexpr int kCharactersCommand = 2;
 
 constexpr float kFaintSeconds = 2.6f;
 constexpr float kVoyageSeconds = 5.5f;
-constexpr std::size_t kNameLength = 10;
 
 constexpr std::array<std::string_view, 16> kNames{"Rin", "Mochi", "Kaze", "Tavi", "Nell", "Yuzu", "Bram", "Suki",
                                                   "Lio", "Wynn", "Hana", "Taro", "Mika", "Ollie", "Zuri", "Fen"};
@@ -450,13 +449,9 @@ void RealmGame::windowKey(gamelib::app::App& app, const gamelib::platform::KeyEv
     game::Session& s = *m_session;
     const std::optional<WindowId> current = m_windows.current();
     if (m_windows.wantsAllKeys()) {
-        // The keybinding window: arrows, Enter and Escape navigate; every
-        // other key is placed on (or shows where it is).
-        if (const std::optional<MenuInput> fixed = fixedMenuKey(event.key)) {
-            windowFeedback(app, m_windows.handle(*fixed, s, m_actions));
-        } else {
-            windowFeedback(app, m_windows.handleKey(event.key, s, m_actions));
-        }
+        // The keybinding window takes every key (GameLib's KeyPalette: arrows,
+        // Enter, Escape, Tab and Delete drive it; other keys are placed on).
+        windowFeedback(app, m_windows.handleKey(event.key, s, m_actions));
     } else {
         const ActionId action = m_actions.actionOn(event.key);
         const std::optional<WindowId> target = windowFor(action);
@@ -507,7 +502,7 @@ void RealmGame::openWindow(gamelib::app::App& app, const WindowId id)
     if (!m_session) {
         return;
     }
-    m_windows.open(id, *m_session);
+    m_windows.open(id, *m_session, m_actions);
     m_sfx.queue(app.sounds(), Sfx::Open);
     app.input().releaseAll();
 }
@@ -651,11 +646,11 @@ void RealmGame::createInput(gamelib::app::App& app, const MenuInput input)
         switch (c.row) {
         case 0: {
             // A suggested name.
-            const auto it = std::ranges::find(kNames, std::string_view{c.look.name});
+            const auto it = std::ranges::find(kNames, std::string_view{c.name.text()});
             int i = it == kNames.end() ? 0 : static_cast<int>(it - kNames.begin());
             cycle(i, static_cast<int>(kNames.size()));
-            c.look.name = kNames[static_cast<std::size_t>(i)];
-            c.typed = false;
+            c.name.setText(std::string{kNames[static_cast<std::size_t>(i)]}, true);
+            c.look.name = c.name.text();
             break;
         }
         case 1: cycle(c.look.hair, 8); break;
@@ -674,6 +669,7 @@ void RealmGame::createInput(gamelib::app::App& app, const MenuInput input)
             m_sfx.queue(q, Sfx::MenuMove);
             break;
         }
+        c.look.name = c.name.trimmed();
         if (c.look.name.empty()) {
             c.row = 0;
             m_sfx.queue(q, Sfx::Error);
@@ -699,33 +695,29 @@ void RealmGame::createInput(gamelib::app::App& app, const MenuInput input)
 
 bool RealmGame::createKey(gamelib::app::App& app, const Key key)
 {
+    // On the name row, typing keys belong to the field (their characters
+    // arrive in onText); Backspace and Delete erase.
     Creator& c = m_creator;
-    if (c.row != 0) {
+    if (c.row != 0 || !c.name.consumes(key)) {
         return false;
     }
-    if (key >= Key::A && key <= Key::Z) {
-        if (!c.typed) {
-            c.look.name.clear();
-            c.typed = true;
-        }
-        if (c.look.name.size() < kNameLength) {
-            const char letter = static_cast<char>((c.look.name.empty() ? 'A' : 'a') + (static_cast<int>(key) - static_cast<int>(Key::A)));
-            c.look.name += letter;
-            m_sfx.queue(app.sounds(), Sfx::Type);
-        } else {
-            m_sfx.queue(app.sounds(), Sfx::Error);
-        }
-        return true;
+    const gamelib::ui::TextEdit edit = c.name.handleKey(key);
+    if (edit == gamelib::ui::TextEdit::Erased) {
+        m_sfx.queue(app.sounds(), Sfx::Type);
     }
-    if (key == Key::Backspace || key == Key::Delete) {
-        c.typed = true;
-        if (!c.look.name.empty()) {
-            c.look.name.pop_back();
-            m_sfx.queue(app.sounds(), Sfx::Type);
-        }
-        return true;
+    c.look.name = c.name.text();
+    return true;
+}
+
+void RealmGame::onText(gamelib::app::App& app, const gamelib::platform::TextEvent& event)
+{
+    if (m_mode != Mode::Create || m_creator.row != 0 || m_transition.active()) {
+        return;
     }
-    return false;
+    Creator& c = m_creator;
+    const gamelib::ui::TextEdit edit = c.name.type(event.codepoint);
+    m_sfx.queue(app.sounds(), edit == gamelib::ui::TextEdit::Typed ? Sfx::Type : Sfx::Error);
+    c.look.name = c.name.text();
 }
 
 void RealmGame::dialogueInput(gamelib::app::App& app, const MenuInput input)
@@ -794,7 +786,8 @@ void RealmGame::startNew(gamelib::app::App& app)
 {
     gamelib::core::Rng rng{gamelib::core::randomSeed()};
     m_creator = {};
-    m_creator.look.name = kNames[static_cast<std::size_t>(rng.below(static_cast<std::uint32_t>(kNames.size())))];
+    m_creator.name.setText(std::string{kNames[static_cast<std::size_t>(rng.below(static_cast<std::uint32_t>(kNames.size())))]}, true);
+    m_creator.look.name = m_creator.name.text();
     m_creator.look.hair = static_cast<int>(rng.below(8));
     m_creator.look.hairColor = static_cast<int>(rng.below(kHairColors));
     m_creator.look.eyes = static_cast<int>(rng.below(8));

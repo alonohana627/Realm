@@ -236,14 +236,8 @@ void WorldView::snap(const game::Session& session)
     m_camera.setZoom(session.map().kind == game::MapKind::Arena ? 1.0f : kZoom);
     // The camera stops a little below the lowest floor, so the earth under
     // the ground shows as a band, not half the screen.
-    Rect bounds = session.map().bounds();
     const gamelib::core::TileWorld world{session.map().tiles, 0, game::tileShapes()};
-    int lowest = 0;
-    for (const gamelib::core::TileRun& run : gamelib::core::floorRuns(world)) {
-        lowest = std::max(lowest, run.line);
-    }
-    bounds.height = std::min(bounds.height, (static_cast<float>(lowest) + 3.3f) * game::kTile);
-    m_camera.setBounds(bounds);
+    m_camera.setBounds(gamelib::core::boundsAboveLowestFloor(session.map().bounds(), world, 3.3f * game::kTile));
     m_camera.centerOn(session.hero().body.box.bottomCenter() + Vec2{0.0f, -140.0f});
     m_squash.reset();
 }
