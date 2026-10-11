@@ -766,8 +766,9 @@ void main()
         AnimeFace f = animeFaceMix(animeExpression(exprA), animeExpression(exprB), blend);
         if (pose == kPoseHurt) {
             f = animeExpression(kAnimeHurt);
-        } else if ((pose == kPoseSwing || pose == kPoseCast || pose == kPoseThrow) && f.eyeShape == kAnimeEyeOpen) {
-            f = animeFaceMix(f, animeExpression(kAnimeDetermined), 0.75);
+        } else if (pose == kPoseSwing || pose == kPoseCast || pose == kPoseThrow) {
+            // Attacks always read determined: open, narrowed eyes and set brows.
+            f = animeExpression(kAnimeDetermined);
         } else if (pose == kPoseCheer) {
             f = animeExpression(kAnimeHappy);
         }

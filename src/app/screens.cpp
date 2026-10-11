@@ -186,8 +186,6 @@ void RealmGame::drawSelect(gamelib::draw::DrawList& list, const float time) cons
             pedestal(list, m_shapes, feet, 200.0f);
             anime::Avatar a = standing(c, feet, 400.0f, time + static_cast<float>(i), 120 + i);
             if (selected) {
-                a.expression = anime::Expression::Happy;
-                a.nextExpression = anime::Expression::Happy;
                 a.pose = std::fmod(time, 4.0f) < 1.0f ? anime::AvatarPose::Cheer : anime::AvatarPose::Idle;
             }
             list.add(anime::avatarSprite(a, m_shapes.avatar));
@@ -249,8 +247,6 @@ void RealmGame::drawCreate(gamelib::draw::DrawList& list, const float time) cons
     const float cycle = std::fmod(c.age, 9.0f);
     if (cycle > 3.0f && cycle < 4.2f) {
         a.pose = anime::AvatarPose::Cheer;
-        a.expression = anime::Expression::Happy;
-        a.nextExpression = anime::Expression::Happy;
     } else if (cycle > 6.0f && cycle < 7.6f) {
         a.pose = anime::AvatarPose::Walk;
         a.phase = time * 1.4f;
@@ -355,8 +351,6 @@ void RealmGame::drawVoyage(gamelib::draw::DrawList& list, const float time) cons
     const float deck = ground.y - 34.0f * (boat.height / 128.0f) + 6.0f;
     if (m_session) {
         anime::Avatar hero = standing(m_session->character(), {ground.x + 70.0f, deck + rock * 0.3f}, kAvatarQuad * scale * 1.1f, time, 9);
-        hero.expression = anime::Expression::Happy;
-        hero.nextExpression = anime::Expression::Happy;
         list.add(anime::avatarSprite(hero, m_shapes.avatar));
     }
     anime::Avatar captain = npcAvatar(game::NpcId::Marlo);
@@ -419,15 +413,11 @@ void RealmGame::drawEnding(gamelib::draw::DrawList& list, const float time) cons
         a.facing = -side;
         a.phase = time + static_cast<float>(i);
         a.pose = std::fmod(time + static_cast<float>(i) * 0.7f, 3.0f) < 0.8f ? anime::AvatarPose::Cheer : anime::AvatarPose::Idle;
-        a.expression = anime::Expression::Happy;
-        a.nextExpression = anime::Expression::Happy;
         list.add(anime::avatarSprite(a, m_shapes.avatar));
     }
     if (m_session) {
         anime::Avatar hero = standing(m_session->character(), {kW * 0.5f, groundY}, kAvatarQuad * 1.9f, time, 3);
         hero.pose = std::fmod(time, 2.5f) < 1.0f ? anime::AvatarPose::Cheer : anime::AvatarPose::Idle;
-        hero.expression = anime::Expression::Happy;
-        hero.nextExpression = anime::Expression::Happy;
         list.add(anime::avatarSprite(hero, m_shapes.avatar));
     }
     // The heading and the journey's numbers.

@@ -57,6 +57,44 @@ std::string lower(std::string_view s)
     return out;
 }
 
+// `text` centered in `box` on one or two lines, the font shrinking from
+// maxSize until it fits; a word is never cut (below minSize the last
+// resort is an ellipsis).
+void fitLabel(gamelib::draw::DrawList& list, const std::string& text, const Rect box, const float maxSize, const float minSize,
+              const Color color)
+{
+    for (float size = maxSize; size >= minSize; size -= 1.0f) {
+        const Font f = kit::font(size, 1.35f);
+        const float line = f.height() * 1.15f;
+        if (f.width(text) <= box.width && f.height() <= box.height) {
+            gamelib::draw::drawText(list, f, text, box.center().x, f.topFor(box.center().y), color, Align::Center);
+            return;
+        }
+        // The two-line split with the narrowest wider line.
+        std::size_t best = std::string::npos;
+        float bestWidth = 1e9f;
+        for (std::size_t i = text.find(' '); i != std::string::npos; i = text.find(' ', i + 1)) {
+            const float w = std::max(f.width(std::string_view{text}.substr(0, i)), f.width(std::string_view{text}.substr(i + 1)));
+            if (w < bestWidth) {
+                bestWidth = w;
+                best = i;
+            }
+        }
+        if (best != std::string::npos && bestWidth <= box.width && line * 2.0f <= box.height + 2.0f) {
+            const float top = box.center().y - line;
+            gamelib::draw::drawText(list, f, std::string_view{text}.substr(0, best), box.center().x, top, color, Align::Center);
+            gamelib::draw::drawText(list, f, std::string_view{text}.substr(best + 1), box.center().x, top + line, color, Align::Center);
+            return;
+        }
+    }
+    const Font f = kit::font(minSize, 1.35f);
+    std::string cut = text;
+    while (cut.size() > 1 && f.width(cut + "..") > box.width) {
+        cut.pop_back();
+    }
+    gamelib::draw::drawText(list, f, cut + "..", box.center().x, f.topFor(box.center().y), color, Align::Center);
+}
+
 // World map pins: a position on the painted map (-1..1 over its rect).
 Vec2 mapPin(const game::MapId id)
 {
@@ -1239,17 +1277,19 @@ void Windows::drawKeys(gamelib::draw::DrawList& list, const Shapes& shapes, cons
             addUi(list, shapes, Ui::Slot, r.expanded(kit::kMargin + 2.0f), srgb(0x000000, 0.0f), ui_color::kGold, 0.0f,
                   0.75f + 0.25f * std::sin(time * 6.0f), 10.0f);
         }
-        const Font kf = kit::font(15.0f, 1.3f);
+        const Font kf = kit::font(16.0f, 1.3f);
         gamelib::draw::drawText(list, kf, gamelib::platform::keyLabel(key), r.x + 7.0f, r.y + 5.0f, ui_color::kSoftInk);
         if (skill && session.character().skillLevel(*skill) > 0) {
             kit::skillIconAt(list, shapes, {r.center().x, r.center().y + 6.0f}, std::min(r.height, r.width) * 0.62f, *skill);
         } else if (item != 0) {
             kit::slotIcon(list, shapes, Rect{r.center().x - 22.0f, r.center().y - 16.0f, 44.0f, 44.0f}, item, 0,
                           session.character().countOf(item) > 0 ? 1.0f : 0.4f);
+        } else if (skill) {
+            // A skill not learned yet: its icon, faded.
+            kit::skillIconAt(list, shapes, {r.center().x, r.center().y + 6.0f}, std::min(r.height, r.width) * 0.62f, *skill, 0.35f);
         } else if (a != gamelib::platform::kNoAction) {
-            const std::string text = lower(actions.info(a).label);
-            gamelib::draw::drawText(list, kit::font(r.width > 100.0f ? 15.0f : 13.0f, 1.3f), text.size() > 9 ? text.substr(0, 8) : text,
-                                    r.center().x, r.center().y + 2.0f, ui_color::kInk, Align::Center);
+            fitLabel(list, lower(actions.info(a).label), {r.x + 4.0f, r.y + 22.0f, r.width - 8.0f, r.height - 24.0f}, 19.0f, 12.0f,
+                     ui_color::kInk);
         }
     }
     // The palette.

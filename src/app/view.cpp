@@ -202,9 +202,6 @@ int expressionFor(const game::Session& s)
     if (s.character().hp.current * 4 < s.character().hp.max) {
         return static_cast<int>(anime::Expression::Sad);
     }
-    if (h.idleTicks > 300) {
-        return static_cast<int>(anime::Expression::Happy);
-    }
     return static_cast<int>(anime::Expression::Neutral);
 }
 
@@ -585,7 +582,7 @@ void WorldView::drawNpcs(gamelib::draw::DrawList& list, const Shapes& shapes, co
         const bool near = std::abs(dx) < 260.0f && std::abs(heroFeet.y - n.feet.y) < 160.0f;
         a.facing = near ? (dx < 0.0f ? -1.0f : 1.0f) : static_cast<float>(n.facing);
         a.pose = anime::AvatarPose::Idle;
-        a.expression = near ? anime::Expression::Happy : anime::Expression::Neutral;
+        a.expression = anime::Expression::Neutral; // eyes open: closed eyes are for reactions
         a.nextExpression = a.expression;
         if (n.npc == game::NpcId::Garrick && !near) {
             const float cycle = std::fmod(time, 2.6f);

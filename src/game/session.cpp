@@ -1065,6 +1065,14 @@ void Session::tickHero(const Input& input)
     }
     const bool wasClimbing = b.climbing;
     const gamelib::core::PlatformerStep step = gamelib::core::stepPlatformer(b, intent, tuning, w, {});
+    // The map's edges hold the hero a little inside, so the whole avatar
+    // stays on screen (the camera stops at the edges).
+    const float inset = kTile * 0.6f;
+    const float rightmost = map().bounds().right() - inset - b.box.width;
+    if (b.box.x < inset || b.box.x > rightmost) {
+        b.box.x = std::clamp(b.box.x, inset, rightmost);
+        b.velocity.x = 0.0f;
+    }
     if (step.events.hyperJumped) {
         (void)m_char.skills.use(hyperId, m_char.mp);
         h.hyperUp = step.events.hyperUp;

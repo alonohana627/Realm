@@ -119,8 +119,11 @@ void DialogueView::draw(gamelib::draw::DrawList& list, const Shapes& shapes, con
     list.setLayer(gamelib::draw::layers::Hud + 40);
     gamelib::ui::drawDialogueBox(list, m_box, time, {0.0f, slide});
     if (!m_role.empty() && !m_box.speaker().empty()) {
-        // The role in the box's top right corner, clear of the text.
-        kit::label(list, m_role, kBox.right() - 28.0f, kBox.y + 26.0f + slide, 21.0f, ui_color::kSoftInk, gamelib::draw::Align::Right);
+        // The role beside the name tag, light text outlined over the world.
+        const Rect tag = gamelib::ui::dialogueTagRect(m_box);
+        const gamelib::draw::Font f = kit::outlined(26.0f, 1.5f);
+        gamelib::draw::drawText(list, f, m_role, tag.right() + 14.0f, f.topFor(tag.center().y + slide), srgb(0xFFFFFF),
+                                gamelib::draw::Align::Left);
     }
     // The speaker leans in over the box's left end, eyes open (the
     // owner's rule: closed eyes only as a reaction).

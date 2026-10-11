@@ -359,16 +359,19 @@ void Hud::drawTracker(gamelib::draw::DrawList& list, const Shapes& shapes, const
     if (shown.size() > 3) {
         shown.erase(shown.begin(), shown.end() - 3);
     }
-    const float w = 420.0f;
-    float y = 170.0f;
-    const Font title = kit::outlined(22.0f, 1.5f);
-    const Font line = kit::outlined(19.0f, 1.25f);
+    // A soft panel under the clock, like the minimap's: each quest with its
+    // marker, title and what is left.
+    constexpr float kRow = 80.0f;
+    const float w = 460.0f;
+    const Rect frame{kW - w - 16.0f, 146.0f, w, 52.0f + 18.0f + kRow * static_cast<float>(shown.size())};
+    const Rect inner = kit::window(list, shapes, frame, "quests", ui_color::kTitle, 0.9f);
+    float y = inner.y;
     for (const int q : shown) {
         const game::QuestText& t = game::questText(q);
         const bool done = session.quests().stateOf(q) == gamelib::core::QuestState::Complete;
-        const float x = kW - 24.0f;
-        gamelib::draw::drawText(list, title, t.title, x, y, t.main ? srgb(0xFFE08A) : srgb(0xFFFFFF), Align::Right);
-        y += 30.0f;
+        addIcon(list, shapes, Ui::Marker, {inner.x + 22.0f, y + 24.0f}, 44.0f, done ? 2.0f : 1.0f, 0.0f,
+                done ? srgb(0x4CC86A) : (t.main ? srgb(0xFFC23A) : srgb(0xB8B0C8)), srgb(0xFFFFFF));
+        kit::label(list, t.title, inner.x + 52.0f, y + 18.0f, 26.0f, t.main ? srgb(0xB0661A) : ui_color::kInk, Align::Left, 1.6f);
         const gamelib::core::QuestDef* def = session.quests().find(q);
         std::string progress;
         if (done) {
@@ -389,11 +392,9 @@ void Hud::drawTracker(gamelib::draw::DrawList& list, const Shapes& shapes, const
                 progress = std::format("{}  {}/{}", what, session.quests().progressOf(q, 0), o.required);
             }
         }
-        gamelib::draw::drawText(list, line, progress, x, y, done ? srgb(0x9AF0A0) : srgb(0xE8F0FF), Align::Right);
-        y += 36.0f;
+        kit::label(list, progress, inner.x + 52.0f, y + 50.0f, 22.0f, done ? ui_color::kGood : ui_color::kSoftInk, Align::Left, 1.4f);
+        y += kRow;
     }
-    (void)shapes;
-    (void)w;
 }
 
 void Hud::drawBoss(gamelib::draw::DrawList& list, const Shapes& shapes, const game::Session& session) const

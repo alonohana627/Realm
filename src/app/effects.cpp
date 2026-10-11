@@ -38,7 +38,7 @@ gamelib::fx::DamageNumberStyle numberStyle()
     s.stackSeconds = 0.6f;
     s.digitHeight = 50.0f;
     s.digitAdvance = 0.62f;
-    s.digitBob = 3.0f;
+    s.digitBob = 0.07f;
     s.stackSpacing = 46.0f;
     return s;
 }

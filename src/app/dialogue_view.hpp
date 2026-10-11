@@ -2,7 +2,7 @@
 
 // The conversation box: GameLib's ui::DialogueBox (pages, the typewriter
 // reveal pausing after punctuation, choices) in Realm's soft window with a
-// sky-blue name tag, the speaker's role in the corner and the speaker's chibi
+// sky-blue name tag, the speaker's role beside it and the speaker's chibi
 // avatar leaning in big over the box's left end (its eyes open: closed
 // eyes are for reactions only). One node at a time: the game
 // walks the core::DialogueRunner and passes the text through

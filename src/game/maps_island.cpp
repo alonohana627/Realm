@@ -43,8 +43,12 @@ void petalbrook(MapDef& def)
     const float y = g * kTile;
     const float hill = (g - 2) * kTile;
     def.decos = {
-        {K::Sign, {tx(6.0f), y}, 0, 1.0f, false},
-        {K::Tree, {tx(9.5f), y}, 0, 1.15f, false},
+        {K::Sign, {tx(5.5f), y}, 0, 1.0f, false},
+        {K::Bush, {tx(7.0f), y}, 0, 0.9f, true},
+        // The bakery by the west gate, bread on the sill.
+        {K::House, {tx(10.5f), y}, house(H::Bakery), 0.85f, false, 8},
+        {K::Barrel, {tx(13.6f), y}, 0, 0.9f, false},
+        {K::Tree, {tx(14.8f), y}, 0, 1.15f, false},
         {K::Flowers, {tx(12.0f), y}, 0, 0.9f, true},
         // Nana Rue's cottage with its garden.
         {K::House, {tx(18.0f), y}, house(H::Cottage), 1.0f, false, 1},
@@ -56,6 +60,8 @@ void petalbrook(MapDef& def)
         {K::Tree, {tx(36.5f), (g - 4) * kTile + 4.0f}, 1, 0.75f, false},
         {K::Bunting, {tx(39.0f), y - 230.0f}, 0, 1.4f, false},
         {K::Bench, {tx(40.5f), y}, 0, 1.0f, false},
+        {K::FlowerPot, {tx(42.3f), y}, 1, 0.9f, false},
+        {K::Grass, {tx(37.5f), y}, 0, 1.0f, true},
         // Hettie's shop.
         {K::House, {tx(47.0f), y}, house(H::Shop), 1.0f, false, 2},
         {K::Barrel, {tx(52.4f), y}, 0, 1.0f, false},
@@ -65,23 +71,33 @@ void petalbrook(MapDef& def)
         {K::Tree, {tx(58.0f), y}, 0, 1.35f, false},
         {K::Flowers, {tx(70.5f), y}, 1, 0.9f, true},
         {K::Lamp, {tx(72.5f), y}, 0, 1.0f, false},
-        {K::Bush, {tx(75.5f), y}, 1, 1.0f, true},
-        // The windmill on the hill.
-        {K::Windmill, {tx(88.0f), hill}, 0, 1.0f, false},
-        {K::Fence, {tx(83.0f), hill}, 0, 1.0f, true},
-        {K::Flowers, {tx(93.0f), hill}, 0, 0.9f, true},
+        {K::Stall, {tx(75.8f), y}, 1, 0.9f, false},
+        {K::Bush, {tx(73.8f), y}, 1, 0.9f, true},
+        {K::Crate, {tx(77.4f), y}, 0, 0.8f, false},
+        // The windmill on the hill, the miller's cottage beside it.
+        {K::House, {tx(83.6f), hill}, house(H::Cottage), 0.72f, false, 10},
+        {K::Windmill, {tx(91.0f), hill}, 0, 1.0f, false},
+        {K::Fence, {tx(86.5f), hill}, 0, 0.9f, true},
+        {K::Flowers, {tx(94.5f), hill}, 0, 0.9f, true},
+        {K::Flowers, {tx(62.0f), y}, 0, 0.8f, true},
+        {K::Grass, {tx(54.5f), y}, 0, 1.0f, true},
+        {K::Lamp, {tx(8.0f), y}, 0, 1.0f, false},
         {K::Grass, {tx(4.0f), y}, 0, 1.0f, true},
         {K::Grass, {tx(27.0f), y}, 0, 1.0f, true},
         {K::Grass, {tx(44.0f), y}, 0, 1.0f, true},
         {K::Grass, {tx(81.0f), hill}, 0, 1.0f, true},
     };
-    const float back = y - 70.0f;
+    // The hazy back row: more of the village and the orchards behind.
+    const float back = y - 50.0f;
     def.skyline = {
-        {K::Tree, {tx(2.0f), back}, 0, 0.8f, false},      {K::House, {tx(10.0f), back}, house(H::Cottage), 0.55f, false, 4},
-        {K::Pine, {tx(26.0f), back}, 0, 0.75f, false},    {K::House, {tx(32.0f), back}, house(H::Bakery), 0.55f, false, 5},
-        {K::Tree, {tx(42.0f), back}, 1, 0.8f, false},     {K::House, {tx(56.0f), back}, house(H::Cottage), 0.55f, false, 6},
-        {K::Tree, {tx(70.0f), back}, 0, 0.8f, false},     {K::House, {tx(76.0f), back}, house(H::Townhouse), 0.5f, false, 7},
-        {K::Pine, {tx(96.0f), back}, 0, 0.75f, false},
+        {K::Tree, {tx(1.0f), back}, 0, 0.85f, false},     {K::House, {tx(7.0f), back}, house(H::Cottage), 0.62f, false, 4},
+        {K::Pine, {tx(13.0f), back}, 0, 0.8f, false},     {K::House, {tx(20.0f), back}, house(H::Townhouse), 0.6f, false, 9},
+        {K::Tree, {tx(26.0f), back}, 1, 0.85f, false},    {K::House, {tx(32.0f), back}, house(H::Bakery), 0.6f, false, 5},
+        {K::Pine, {tx(38.0f), back}, 0, 0.8f, false},     {K::House, {tx(44.0f), back}, house(H::Inn), 0.62f, false, 11},
+        {K::Tree, {tx(51.0f), back}, 0, 0.9f, false},     {K::House, {tx(57.0f), back}, house(H::Cottage), 0.6f, false, 6},
+        {K::Tree, {tx(63.0f), back}, 1, 0.85f, false},    {K::House, {tx(70.0f), back}, house(H::Townhouse), 0.58f, false, 7},
+        {K::Pine, {tx(76.0f), back}, 0, 0.8f, false},     {K::House, {tx(82.0f), back - 60.0f}, house(H::Library), 0.58f, false, 2},
+        {K::Tree, {tx(89.0f), back - 80.0f}, 0, 0.85f, false}, {K::Pine, {tx(96.0f), back - 90.0f}, 0, 0.8f, false},
     };
     def.npcs = {
         {NpcId::NanaRue, feetOn(24.0f, g), -1},
