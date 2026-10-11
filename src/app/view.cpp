@@ -591,10 +591,8 @@ void WorldView::drawNpcs(gamelib::draw::DrawList& list, const Shapes& shapes, co
                 a.phase = cycle / 0.7f;
             }
         } else if (n.npc == game::NpcId::Pip) {
-            const float cycle = std::fmod(time + 1.0f, 4.0f);
-            if (cycle < 0.6f) {
-                a.pose = anime::AvatarPose::Cheer;
-            }
+            // Pip swings his legs on the branch: a little bob, eyes open.
+            a.phase = time * 1.6f;
         } else if (n.npc == game::NpcId::Kestrel && !near) {
             const float cycle = std::fmod(time, 3.2f);
             if (cycle < 0.8f) {

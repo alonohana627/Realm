@@ -79,8 +79,12 @@ void main()
     if (flyer) {
         m.offset.y += -10.0 + sin(time * 2.4) * 4.0;
     }
-    if (state == kAnimeMove && m.mood == kAnimeMoodCalm && !flyer) {
-        m.mood = kAnimeMoodHappy * int(fract(seed * 3.0) > 0.5);
+    // Calm open eyes at rest and on the move (blinking now and then); some
+    // walkers wear a smile, but only the mouth: eyes squint on a hit or a
+    // wind-up alone.
+    int mouthMood = m.mood;
+    if (state == kAnimeMove && m.mood == kAnimeMoodCalm && !flyer && fract(seed * 3.0) > 0.5) {
+        mouthMood = kAnimeMoodHappy;
     }
     vec2 q = animeApplyMotion(p, m, feet);
     vec3 ink = animeInkOf(bodyColor * 0.6 + accent * 0.4);
@@ -118,7 +122,7 @@ void main()
         eye(q, vec2(-6.0, 29.0), 4.6, m.mood, -1.0);
         eye(q, vec2(9.0, 29.0), 4.6, m.mood, 1.0);
         cheeks(q, vec2(-12.0, 37.0), vec2(15.0, 37.0), 4.0, ink);
-        animeMonsterMouth(C, q, vec2(1.5, 38.0), 6.5, m.mood, ink);
+        animeMonsterMouth(C, q, vec2(1.5, 38.0), 6.5, mouthMood, ink);
         if (glowing) {
             C.color = over(vec4(accent * 1.3, glowFalloff(capD, 10.0) * 0.5 * (0.8 + 0.2 * sin(time * 2.0))), C.color);
         }
@@ -170,7 +174,7 @@ void main()
         eye(q, vec2(-8.0, 31.0), 4.8, m.mood, -1.0);
         eye(q, vec2(10.0, 31.0), 4.8, m.mood, 1.0);
         cheeks(q, vec2(-16.0, 39.0), vec2(18.0, 39.0), 4.5, ink);
-        animeMonsterMouth(C, q, vec2(1.0, 40.0), 6.5, m.mood, ink);
+        animeMonsterMouth(C, q, vec2(1.0, 40.0), 6.5, mouthMood, ink);
         top = ice ? 6.0 : 10.0;
     } else if (kind == kTurbanshell) {
         AnimeMaterial soft = animeMaterial(bodyColor);
@@ -194,7 +198,7 @@ void main()
         animePart(C, body, soft);
         eye(q, head + vec2(-1.0, -1.0), 3.3, m.mood, -1.0);
         eye(q, head + vec2(6.5, -1.0), 3.0, m.mood, 1.0);
-        animeMonsterMouth(C, q, head + vec2(3.5, 5.0), 4.5, m.mood, ink);
+        animeMonsterMouth(C, q, head + vec2(3.5, 5.0), 4.5, mouthMood, ink);
         // A round spiral shell.
         vec2 sc = vec2(-8.0, 24.0);
         float shellD = sdCircle(q - sc, 20.0);
@@ -236,7 +240,7 @@ void main()
         animeGloss(C, q, body, vec2(-10.0, 25.0), vec2(8.0, 4.0), 0.4);
         eye(q, vec2(-7.0, 12.0), 3.4, m.mood, -1.0);
         eye(q, vec2(10.0, 12.0), 3.4, m.mood, 1.0);
-        animeMonsterMouth(C, q, vec2(2.0, 33.0), 6.0, m.mood, ink);
+        animeMonsterMouth(C, q, vec2(2.0, 33.0), 6.0, mouthMood, ink);
         cheeks(q, vec2(-12.0, 32.0), vec2(15.0, 32.0), 3.5, ink);
         // The claws, raised; they open and snap.
         for (int i = 0; i < 2; ++i) {
@@ -324,7 +328,7 @@ void main()
         eye(q, vec2(10.0, 19.0), 4.4, m.mood, -1.0);
         eye(q, vec2(21.5, 19.0), 3.8, m.mood, 1.0);
         animeBlush(C, q, vec2(14.0, 30.0), vec2(4.0, 2.0), 0.7, ink);
-        animeMonsterMouth(C, q, vec2(21.0, 39.5), 5.0, m.mood, ink);
+        animeMonsterMouth(C, q, vec2(21.0, 39.5), 5.0, mouthMood, ink);
         if (state == kAnimeMove) {
             for (int i = 0; i < 3; ++i) {
                 float t = fract(progress * 2.0 + float(i) / 3.0);
@@ -359,7 +363,7 @@ void main()
         animePart(C, sdEar(q, topC + vec2(3.0, -11.0), topC + vec2(13.0, -20.0 - sin(time * 3.0)), 5.0, -0.25), leaf);
         eye(q, vec2(-2.0, 24.0), 4.3, m.mood, -1.0);
         eye(q, vec2(11.0, 24.0), 4.3, m.mood, 1.0);
-        animeMonsterMouth(C, q, vec2(5.0, 33.0), 6.0, m.mood, ink);
+        animeMonsterMouth(C, q, vec2(5.0, 33.0), 6.0, mouthMood, ink);
         cheeks(q, vec2(-7.0, 31.0), vec2(17.0, 31.0), 3.5, ink);
         vec2 shoulderF = vec2(18.0, 24.0);
         vec2 hand = shoulderF + rotate2d(vec2(12.0, 8.0), swing);
@@ -378,7 +382,7 @@ void main()
         animeGloss(C, q, body, vec2(-8.0, 4.0), vec2(6.0, 8.0), 0.5);
         eye(q, vec2(-4.0, 14.0), 4.8, m.mood, -1.0);
         eye(q, vec2(10.0, 14.0), 4.8, m.mood, 1.0);
-        animeMonsterMouth(C, q, vec2(3.0, 25.0), 6.0, m.mood == kAnimeMoodCalm ? kAnimeMoodHappy : m.mood, ink);
+        animeMonsterMouth(C, q, vec2(3.0, 25.0), 6.0, mouthMood == kAnimeMoodCalm ? kAnimeMoodHappy : mouthMood, ink);
         if (leafy) {
             AnimeMaterial leaf = animeMaterial(accent);
             animePart(C, sdEar(q, vec2(4.0, -4.0), vec2(-6.0, -16.0 + wave), 5.5, 0.3), leaf);
@@ -414,7 +418,7 @@ void main()
         eye(q, vec2(2.0, 28.0), 4.4, m.mood, -1.0);
         eye(q, vec2(15.0, 28.0), 4.0, m.mood, 1.0);
         cheeks(q, vec2(-3.0, 36.0), vec2(20.0, 36.0), 3.5, ink);
-        animeMonsterMouth(C, q, vec2(9.0, 37.0), 5.5, m.mood, ink);
+        animeMonsterMouth(C, q, vec2(9.0, 37.0), 5.5, mouthMood, ink);
         top = 6.0;
         topX = -6.0;
     } else {
@@ -437,7 +441,7 @@ void main()
         }
         eye(q, c0 + vec2(-4.0, -1.0), 3.8, m.mood, -1.0);
         eye(q, c0 + vec2(7.0, -1.0), 3.6, m.mood, 1.0);
-        animeMonsterMouth(C, q, c0 + vec2(2.0, 8.0), 5.0, m.mood == kAnimeMoodCalm ? kAnimeMoodHappy : m.mood, ink);
+        animeMonsterMouth(C, q, c0 + vec2(2.0, 8.0), 5.0, mouthMood == kAnimeMoodCalm ? kAnimeMoodHappy : mouthMood, ink);
         animeFlat(C, sdTriangle(q, c0 + vec2(-1.0, 9.0), c0 + vec2(2.0, 9.0), c0 + vec2(0.5, 12.0)), vec3(1.0)); // a fang
         animePart(C, sdWing(q, c0 + vec2(4.0, 2.0), 28.0, 0.4 + flap * 0.7, 1.0), wingM);
         top = c0.y - 30.0;
