@@ -32,6 +32,9 @@ using gamelib::platform::Key;
 
 constexpr float kW = 1920.0f;
 constexpr int kBagColumns = 6;
+// The keybinding window: between key caps, between palette cells.
+constexpr float kKeyGap = 6.0f;
+constexpr Vec2 kEntryGap{20.0f, 14.0f};
 
 Rect lifted(const Rect& r, const float amount)
 {
@@ -495,9 +498,9 @@ WindowFeedback Windows::handleMouse(const gamelib::platform::MouseEvent& event, 
     }
     // The keybinding window: GameLib's KeyPalette (drag and drop, the wheel).
     refreshPalette(session, actions);
-    const gamelib::ui::KeyPalette::Layout layout = m_keys.layout(keyboardRect(), paletteRect(), keyGeometry());
+    const gamelib::ui::KeyPalette::Layout layout = m_keys.layout(keyboardRect(), paletteRect(), kKeyGap, kEntryGap);
     const gamelib::ui::KeyPaletteResult r = m_keys.handleMouse(event, layout, actions);
-    return r.event == gamelib::ui::KeyPaletteEvent::Cursor ? WindowFeedback::None : keysResult(r, actions);
+    return keysResult(r, actions);
 }
 
 // ---------------------------------------------------------------------------
@@ -516,14 +519,6 @@ Rect Windows::paletteRect() const
     const Rect w = windowRect(WindowId::Keys);
     const Rect k = keyboardRect();
     return {w.x + 40.0f, k.bottom() + 70.0f, w.width - 80.0f, w.bottom() - k.bottom() - 120.0f};
-}
-
-gamelib::ui::KeyPaletteStyle Windows::keyGeometry()
-{
-    gamelib::ui::KeyPaletteStyle s;
-    s.keyGap = 6.0f;
-    s.entryGap = {20.0f, 14.0f};
-    return s;
 }
 
 std::vector<Windows::PaletteEntry> Windows::palette(const game::Session& session, const gamelib::platform::ActionMap& actions) const
@@ -576,12 +571,16 @@ WindowFeedback Windows::keysResult(const gamelib::ui::KeyPaletteResult& r, const
     case KeyPaletteEvent::Bound:
     case KeyPaletteEvent::Moved:
         m_message = std::format("{} is on {}", name(r.action), lower(gamelib::platform::keyLabel(r.key)));
+        if (r.displacedTo != Key::Unknown && r.displaced != gamelib::platform::kNoAction) {
+            m_message += std::format(" - {} moved to {}", name(r.displaced), lower(gamelib::platform::keyLabel(r.displacedTo)));
+        }
         if (r.displacedUnbound) {
             m_message += std::format(" - {} has no key now", name(r.displaced));
         }
         m_messageAge = 0.0f;
         return WindowFeedback::Bound;
     case KeyPaletteEvent::Unbound: return WindowFeedback::Unbound;
+    case KeyPaletteEvent::Hover: return WindowFeedback::None;
     case KeyPaletteEvent::Refused:
         m_message = "that key is locked";
         m_messageAge = 0.0f;
@@ -1091,11 +1090,11 @@ void Windows::drawKeys(gamelib::draw::DrawList& list, const Shapes& shapes, cons
     const Rect keyboard = keyboardRect();
     addUi(list, shapes, Ui::Well, keyboard.expanded(14.0f + kit::kMargin), srgb(0xE8DCC6), ui_color::kTitle, 0.0f, 0.0f, 18.0f);
     const std::vector<PaletteEntry> entries = palette(session, actions);
-    const gamelib::ui::KeyPalette::Layout layout = m_keys.layout(keyboard, paletteRect(), keyGeometry());
+    const gamelib::ui::KeyPalette::Layout layout = m_keys.layout(keyboard, paletteRect(), kKeyGap, kEntryGap);
     const game::Character& c = session.character();
     // GameLib's KeyPalette lays out and runs the keyboard and the palette;
     // Realm paints the caps, the entries and what is in hand its own way.
-    gamelib::ui::KeyPaletteStyle style = keyGeometry();
+    gamelib::ui::KeyPaletteStyle style;
     style.capPainter = [&](gamelib::draw::DrawList& l, const gamelib::ui::KeyCapView& cap) {
         const ActionId a = cap.lifted ? gamelib::platform::kNoAction : cap.action;
         Color face = srgb(0xF6F0E6);

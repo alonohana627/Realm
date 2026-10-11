@@ -21,7 +21,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 include(FetchContent)
 FetchContent_Declare(GameLib
     GIT_REPOSITORY https://github.com/alonohana627/GameLib.git
-    GIT_TAG        ba000e7d10b95753af3370558674ee02ed1773b2
+    GIT_TAG        ddf15fcf987323c54a925abf1107b54ce66d8f73
     GIT_SHALLOW    FALSE)  # a shallow clone cannot check out an arbitrary commit
 FetchContent_MakeAvailable(GameLib)
 

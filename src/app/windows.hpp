@@ -95,7 +95,6 @@ private:
     [[nodiscard]] std::vector<PaletteEntry> palette(const game::Session& session, const gamelib::platform::ActionMap& actions) const;
     [[nodiscard]] gamelib::core::Rect keyboardRect() const;
     [[nodiscard]] gamelib::core::Rect paletteRect() const;
-    [[nodiscard]] static gamelib::ui::KeyPaletteStyle keyGeometry();
     void refreshPalette(const game::Session& session, const gamelib::platform::ActionMap& actions);
     WindowFeedback keysResult(const gamelib::ui::KeyPaletteResult& result, const gamelib::platform::ActionMap& actions);
 
