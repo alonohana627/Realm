@@ -25,12 +25,7 @@ FetchContent_Declare(GameLib
     GIT_SHALLOW    FALSE)  # a shallow clone cannot check out an arbitrary commit
 FetchContent_MakeAvailable(GameLib)
 
-add_executable(realm src/main.cpp)
-target_link_libraries(realm PRIVATE GameLib::app GameLib::fx)
-gamelib_target_warnings(realm)
-gamelib_copy_runtime(realm)
-# The game's own procedural shapes, embedded as SPIR-V.
-gamelib_add_shaders(realm SHADERS shaders/orb.frag)
+add_subdirectory(src)
 
 # Smoke test: launch, render 120 frames with the validation layer required,
 # exit cleanly. Exit code 77 (no Vulkan GPU) counts as skipped. The profile
